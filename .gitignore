@@ -1,4 +1,3 @@
-
 # --- 예외 허용 (GitHub에 올려야 하는 DB) ---
 src/main/resources/database/*.db
 !src/main/resources/database/abbreviations.db
@@ -8,6 +7,10 @@ src/main/resources/database/*.db
 
 # Gradle metadata
 **/.gradle/
+.gradle-tmp/
+caches/
+daemon/
+wrapper/dists/
 
 # Build outputs
 **/build/

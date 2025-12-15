@@ -1,6 +1,21 @@
-# GDSEMR_ver_0.3
+# GDSEMR_ver_1.1001
 
 JavaFX EMR prototype targeting Java 25 and JavaFX 25.
+
+## Architecture
+
+```mermaid
+graph TD;
+    app[app (JavaFX UI)] -->|Network/REST| server[server (Spring Boot API)];
+    app --> utilities;
+    app --> list;
+    utilities --> list;
+```
+
+- **app**: Main JavaFX application.
+- **utilities**: Shared logic and helper classes.
+- **list**: Core data structures and lists.
+- **server**: Spring Boot REST API backend.
 
 ## Requirements
 - JDK 25 (Gradle toolchains will download/use it automatically if available)

@@ -1,5 +1,8 @@
 package com.emr.gds;
 
+import com.emr.gds.core.db.AppDatabaseManager;
+import com.emr.gds.core.repository.AbbreviationRepository;
+import com.emr.gds.infrastructure.persistence.jdbc.JdbcAbbreviationRepository;
 import com.emr.gds.main.imaging.ChestXrayReviewStage;
 import com.emr.gds.main.ekg.EkgReportStage;
 import com.emr.gds.main.ekg.EkgSimpleReportApp;
@@ -50,11 +53,6 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -80,12 +78,6 @@ public class IttiaApp extends Application {
     private static final String APP_TITLE = "GDSEMR ITTIA – EMR Prototype (JavaFX)";
     private static final int SCENE_WIDTH = 1350;
     private static final int SCENE_HEIGHT = 1000;
-    private static final String DB_FILENAME = "abbreviations.db";
-    private static final String DB_TABLE_NAME = "abbreviations";
-    private static final String DB_URL_PREFIX = "jdbc:sqlite:";
-    private static final String DB_DRIVER = "org.sqlite.JDBC";
-    private static final String DEFAULT_ABBREV_C = "hypercholesterolemia";
-    private static final String DEFAULT_ABBREV_TO = "hypothyroidism";
     private static final int INITIAL_FOCUS_AREA = 0; // Corresponds to the first text area
 
     // ================================
@@ -94,11 +86,14 @@ public class IttiaApp extends Application {
     private IAMProblemAction problemAction;
     private IAMButtonAction buttonAction;
     private IAMTextArea textAreaManager;
-    private Connection dbConn;
+    private AbbreviationRepository abbrevRepository;
     private final Map<String, String> abbrevMap = new HashMap<>();
     private IAIFreqFrame freqStage; // Manages the vital signs window
     private IAMFunctionkey functionKeyHandler;
     private Stage mainStage;
+    
+    // Profiling
+    private long startTime;
 
     // ================================
     // Application Lifecycle
@@ -118,10 +113,12 @@ public class IttiaApp extends Application {
      */
     @Override
     public void start(Stage primaryStage) {
+        this.startTime = System.currentTimeMillis();
         this.mainStage = primaryStage;
         primaryStage.setTitle(APP_TITLE);
 
         showLoginScene(primaryStage);
+        System.out.println("Time to first window: " + (System.currentTimeMillis() - startTime) + "ms");
     }
 
     private void showLoginScene(Stage stage) {
@@ -168,8 +165,8 @@ public class IttiaApp extends Application {
         Label statusLabel = new Label();
         statusLabel.setStyle("-fx-text-fill: #facc15; -fx-font-size: 12px;");
 
-        loginButton.setOnAction(e -> handleLogin(usernameField, passwordField, statusLabel));
-        passwordField.setOnAction(e -> handleLogin(usernameField, passwordField, statusLabel));
+        loginButton.setOnAction(e -> handleLogin(usernameField, passwordField, statusLabel, loginButton));
+        passwordField.setOnAction(e -> handleLogin(usernameField, passwordField, statusLabel, loginButton));
 
         VBox buttonRow = new VBox(loginButton);
         buttonRow.setAlignment(Pos.CENTER_LEFT);
@@ -184,7 +181,7 @@ public class IttiaApp extends Application {
         return new Scene(shell, 900, 600);
     }
 
-    private void handleLogin(TextField usernameField, PasswordField passwordField, Label statusLabel) {
+    private void handleLogin(TextField usernameField, PasswordField passwordField, Label statusLabel, Button loginButton) {
         String username = usernameField.getText().trim();
         String password = passwordField.getText();
 
@@ -193,14 +190,39 @@ public class IttiaApp extends Application {
             return;
         }
 
-        statusLabel.setText("Signing in...");
-        launchMainScene();
+        statusLabel.setText("Signing in & loading data...");
+        loginButton.setDisable(true);
+        usernameField.setDisable(true);
+        passwordField.setDisable(true);
+
+        // Load data asynchronously
+        javafx.concurrent.Task<Map<String, String>> loadTask = new javafx.concurrent.Task<>() {
+            @Override
+            protected Map<String, String> call() throws Exception {
+                AbbreviationRepository repo = new JdbcAbbreviationRepository();
+                return repo.findAll();
+            }
+        };
+
+        loadTask.setOnSucceeded(e -> {
+            launchMainScene(loadTask.getValue());
+        });
+
+        loadTask.setOnFailed(e -> {
+            statusLabel.setText("Error loading data: " + loadTask.getException().getMessage());
+            loginButton.setDisable(false);
+            usernameField.setDisable(false);
+            passwordField.setDisable(false);
+            loadTask.getException().printStackTrace();
+        });
+
+        new Thread(loadTask).start();
     }
 
-    private void launchMainScene() {
+    private void launchMainScene(Map<String, String> loadedAbbreviations) {
         try {
             // Initialize core components before building the UI
-            initializeApplicationComponents();
+            initializeApplicationComponents(loadedAbbreviations);
             
             // Build the main layout
             BorderPane root = buildRootLayout();
@@ -215,6 +237,8 @@ public class IttiaApp extends Application {
             
             // Perform setup tasks after the stage is visible
             configurePostShow(scene);
+            
+            System.out.println("Time to main scene: " + (System.currentTimeMillis() - startTime) + "ms");
         } catch (Exception e) {
             showFatalError("Application Startup Error", "Failed to start the application.", e);
         }
@@ -230,11 +254,12 @@ public class IttiaApp extends Application {
     @Override
     public void stop() throws Exception {
         super.stop();
-        // Ensure the database connection is closed
-        if (dbConn != null && !dbConn.isClosed()) {
-            dbConn.close();
-            System.out.println("Database connection closed.");
+        // Ensure background tasks and database connections are closed
+        if (problemAction != null) {
+            problemAction.closeResources();
         }
+        AppDatabaseManager.getInstance().closeAll();
+        System.out.println("All database connections closed.");
     }
 
     // ================================
@@ -244,53 +269,21 @@ public class IttiaApp extends Application {
     /**
      * Initializes database connection and core application managers.
      */
-    private void initializeApplicationComponents() throws SQLException, IOException, ClassNotFoundException {
-        initAbbrevDatabase();
+    private void initializeApplicationComponents(Map<String, String> loadedAbbreviations) throws IOException, ClassNotFoundException {
+        // Initialize Repository
+        abbrevRepository = new JdbcAbbreviationRepository();
+        
+        // Load Data
+        abbrevMap.clear();
+        if (loadedAbbreviations != null) {
+            abbrevMap.putAll(loadedAbbreviations);
+        }
+        
         problemAction = new IAMProblemAction(this);
         textAreaManager = new IAMTextArea(abbrevMap, problemAction);
-        buttonAction = new IAMButtonAction(this, dbConn, abbrevMap);
+        buttonAction = new IAMButtonAction(this, abbrevMap);
         textAreaManager.setAssessmentDoubleClickHandler((textArea, index) -> buttonAction.openKcd9Manager());
         functionKeyHandler = new IAMFunctionkey(this);
-    }
-
-    /**
-     * Sets up the connection to the abbreviations SQLite database.
-     */
-    private void initAbbrevDatabase() throws ClassNotFoundException, SQLException, IOException {
-        Class.forName(DB_DRIVER);
-        Path dbFile = getDbPath(DB_FILENAME);
-        Files.createDirectories(dbFile.getParent()); // Ensure the directory exists
-        String url = DB_URL_PREFIX + dbFile.toAbsolutePath();
-        System.out.println("[DB PATH] abbreviations -> " + dbFile.toAbsolutePath());
-
-        dbConn = DriverManager.getConnection(url);
-        createAbbreviationTable();
-        loadAbbreviations();
-    }
-
-    /**
-     * Creates the abbreviations table if it doesn't exist and inserts default values.
-     */
-    private void createAbbreviationTable() throws SQLException {
-        try (Statement stmt = dbConn.createStatement()) {
-            stmt.execute("CREATE TABLE IF NOT EXISTS " + DB_TABLE_NAME + " (short TEXT PRIMARY KEY, full TEXT)");
-            // Insert default abbreviations if they don't already exist
-            stmt.execute("INSERT OR IGNORE INTO " + DB_TABLE_NAME + " (short, full) VALUES ('c', '" + DEFAULT_ABBREV_C + "')");
-            stmt.execute("INSERT OR IGNORE INTO " + DB_TABLE_NAME + " (short, full) VALUES ('to', '" + DEFAULT_ABBREV_TO + "')");
-        }
-    }
-
-    /**
-     * Loads all abbreviations from the database into the in-memory map.
-     */
-    private void loadAbbreviations() throws SQLException {
-        abbrevMap.clear();
-        try (Statement stmt = dbConn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM " + DB_TABLE_NAME)) {
-            while (rs.next()) {
-                abbrevMap.put(rs.getString("short"), rs.getString("full"));
-            }
-        }
     }
 
     // ================================
@@ -735,10 +728,6 @@ public class IttiaApp extends Application {
 
     public IAMTextArea getTextAreaManager() {
         return textAreaManager;
-    }
-
-    public Connection getDbConnection() {
-        return dbConn;
     }
 
     public Map<String, String> getAbbrevMap() {
