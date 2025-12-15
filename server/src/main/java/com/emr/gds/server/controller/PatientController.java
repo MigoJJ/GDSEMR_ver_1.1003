@@ -7,6 +7,7 @@ import com.emr.gds.server.dto.VisitResponse;
 import com.emr.gds.server.model.Patient;
 import com.emr.gds.server.model.Visit;
 import com.emr.gds.server.service.PatientService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,7 +42,7 @@ public class PatientController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public PatientResponse createPatient(@RequestBody PatientRequest request) {
+    public PatientResponse createPatient(@Valid @RequestBody PatientRequest request) {
         Patient patient = patientService.createPatient(request);
         return toResponse(patient);
     }
@@ -53,7 +54,7 @@ public class PatientController {
     }
 
     @PutMapping("/{id}")
-    public PatientResponse updatePatient(@PathVariable UUID id, @RequestBody PatientRequest request) {
+    public PatientResponse updatePatient(@PathVariable UUID id, @Valid @RequestBody PatientRequest request) {
         Patient updated = patientService.updatePatient(id, request);
         return toResponse(updated);
     }
@@ -73,7 +74,7 @@ public class PatientController {
 
     @PostMapping("/{id}/visits")
     @ResponseStatus(HttpStatus.CREATED)
-    public VisitResponse addVisit(@PathVariable UUID id, @RequestBody VisitRequest request) {
+    public VisitResponse addVisit(@PathVariable UUID id, @Valid @RequestBody VisitRequest request) {
         Visit visit = patientService.addVisit(id, request);
         return toVisitResponse(visit);
     }
