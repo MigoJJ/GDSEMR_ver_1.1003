@@ -53,6 +53,8 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -269,9 +271,10 @@ public class IttiaApp extends Application {
     /**
      * Initializes database connection and core application managers.
      */
-    private void initializeApplicationComponents(Map<String, String> loadedAbbreviations) throws IOException, ClassNotFoundException {
+    private void initializeApplicationComponents(Map<String, String> loadedAbbreviations) throws IOException, ClassNotFoundException, SQLException {
         // Initialize Repository
         abbrevRepository = new JdbcAbbreviationRepository();
+        Connection abbrevConnection = AppDatabaseManager.getInstance().getAbbreviationConnection();
         
         // Load Data
         abbrevMap.clear();
@@ -281,7 +284,7 @@ public class IttiaApp extends Application {
         
         problemAction = new IAMProblemAction(this);
         textAreaManager = new IAMTextArea(abbrevMap, problemAction);
-        buttonAction = new IAMButtonAction(this, abbrevMap);
+        buttonAction = new IAMButtonAction(this, abbrevConnection, abbrevMap);
         textAreaManager.setAssessmentDoubleClickHandler((textArea, index) -> buttonAction.openKcd9Manager());
         functionKeyHandler = new IAMFunctionkey(this);
     }

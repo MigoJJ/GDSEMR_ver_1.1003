@@ -342,6 +342,13 @@ public class IAMProblemAction {
     }
 
     /**
+     * Backwards-compatible wrapper to close resources.
+     */
+    public void closeResources() {
+        closeDatabase();
+    }
+
+    /**
      * Closes the database connection when the application shuts down.
      */
     public void closeDatabase() {
