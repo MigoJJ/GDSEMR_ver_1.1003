@@ -292,13 +292,10 @@ public class IAMProblemAction {
      * @param newText The new text content.
      */
     public void updateAndRedrawScratchpad(String title, String newText) {
-        String trimmedText = newText.trim();
-        if (trimmedText.isEmpty()) {
+        if (newText.isEmpty()) {
             scratchpadEntries.remove(title);
         } else {
-            // Replace newlines with a space and a tab for a more compact view
-            String singleLineText = trimmedText.replaceAll("\\s*\\R\\s*", " \n\t ");
-            scratchpadEntries.put(title, singleLineText);
+            scratchpadEntries.put(title, newText);
         }
         redrawScratchpad();
     }
@@ -310,20 +307,21 @@ public class IAMProblemAction {
         if (scratchpadArea == null) return;
 
         List<String> orderedTitles = Arrays.asList(IAMTextArea.TEXT_AREA_TITLES);
-        StringJoiner sj = new StringJoiner("\n");
+        StringJoiner sj = new StringJoiner("\n\n"); // Use double newline to separate sections
 
         for (String title : orderedTitles) {
             String value = scratchpadEntries.get(title);
             if (value != null && !value.isEmpty()) {
-                sj.add(title + " " + value);
+                sj.add(title + "\n" + value); // Add newline after title
             }
         }
 
         String newContent = sj.toString();
         if (!scratchpadArea.getText().equals(newContent)) {
             scratchpadArea.setText(newContent);
-            scratchpadArea.positionCaret(scratchpadArea.getLength());
-            scratchpadArea.setScrollTop(Double.MAX_VALUE);
+            // Let user control their view
+            // scratchpadArea.positionCaret(scratchpadArea.getLength());
+            // scratchpadArea.setScrollTop(Double.MAX_VALUE);
         }
     }
 
