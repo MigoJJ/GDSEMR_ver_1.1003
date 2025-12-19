@@ -15,6 +15,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -312,7 +313,12 @@ public class IAMProblemAction {
         for (String title : orderedTitles) {
             String value = scratchpadEntries.get(title);
             if (value != null && !value.isEmpty()) {
-                sj.add(title + "\n" + value); // Add newline after title
+                String filteredValue = value.lines()
+                                            .filter(line -> !line.isBlank())
+                                            .collect(Collectors.joining("\n"));
+                if (!filteredValue.isEmpty()) {
+                    sj.add(title + "\n" + filteredValue); // Add newline after title
+                }
             }
         }
 
