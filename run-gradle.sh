@@ -2,14 +2,14 @@
 
 # =============================================================================
 # run-gradle.sh - Run Gradle project on Ubuntu
-# Project: GDSEMR_ver_0.3 (Java 25 + JavaFX 25)
-# Location: ~/git/GDSEMR_ver_0.3
+# Project: GDSEMR_ver_1.1001 (Java 25 + JavaFX 25)
+# Location: ~/git/GDSEMR_ver_1.1001
 # =============================================================================
 
 set -euo pipefail  # Exit on error, unset vars, pipe failures
 
 # --- Configuration ---
-PROJECT_DIR="$HOME/git/GDSEMR_ver_0.3"
+PROJECT_DIR="$HOME/git/GDSEMR_ver_1.1001"
 GRADLE_WRAPPER="./gradlew"
 LOG_FILE="$PROJECT_DIR/run.log"
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')

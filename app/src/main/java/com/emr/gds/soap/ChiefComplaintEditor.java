@@ -1,16 +1,9 @@
 package com.emr.gds.soap;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import com.emr.gds.service.AbbreviationService;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javafx.beans.property.SimpleStringProperty;
@@ -42,7 +35,7 @@ public class ChiefComplaintEditor {
     private final TextArea sourceTextArea;
     private Stage editorStage;
     private TextArea editorTextArea;
-    private final Map<String, String> abbrevMap = new HashMap<>();
+    private final Map<String, String> abbrevMap;
 
     private final String[] ccTemplates = {
             "Chest pain", "Shortness of breath", "Abdominal pain", "Headache", "Back pain",
@@ -68,35 +61,10 @@ public class ChiefComplaintEditor {
         public String getText() { return text.get(); }
     }
 
-    public ChiefComplaintEditor(TextArea sourceTextArea) {
+    public ChiefComplaintEditor(TextArea sourceTextArea, AbbreviationService abbreviationService) {
         this.sourceTextArea = sourceTextArea;
-        initAbbrevDatabase();
+        this.abbrevMap = abbreviationService.getAbbreviations();
         createEditorWindow();
-    }
-
-    private void initAbbrevDatabase() {
-        try {
-            Path dbFile = getDbPath("abbreviations.db");
-            if (!Files.exists(dbFile)) return;
-            String url = "jdbc:sqlite:" + dbFile.toAbsolutePath();
-            try (Connection conn = DriverManager.getConnection(url);
-                 Statement stmt = conn.createStatement();
-                 ResultSet rs = stmt.executeQuery("SELECT * FROM abbreviations")) {
-                while (rs.next()) {
-                    abbrevMap.put(rs.getString("short"), rs.getString("full"));
-                }
-            }
-        } catch (Exception e) {
-            showError("Failed to initialize abbreviation database: " + e.getMessage());
-        }
-    }
-
-    private Path getDbPath(String fileName) {
-        Path p = Paths.get("").toAbsolutePath();
-        while (p != null && !Files.exists(p.resolve("gradlew"))) {
-            p = p.getParent();
-        }
-        return (p != null) ? p.resolve("app/db/").resolve(fileName) : Paths.get("app/db").resolve(fileName);
     }
 
     private void createEditorWindow() {

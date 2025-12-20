@@ -1,22 +1,14 @@
 package com.emr.gds.soap.IMSFollowUp;
 
 import com.emr.gds.input.IAITextAreaManager;
-import com.emr.gds.main.custom_ui.IAMProblemAction;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import com.emr.gds.shared.ui.IAMProblemAction;
+import com.emr.gds.service.AbbreviationService;
+import com.emr.gds.service.PlanHistoryService;
+import java.sql.SQLException;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -40,22 +32,26 @@ public class PlanFollowupAction {
 
     private final IAITextAreaManager textAreaManager;
     private final IAMProblemAction problemAction;
+    private final PlanHistoryService planHistoryService;
     private Stage editorStage;
     private TextArea editorTextArea;
     private TextField fuField, medsCodeField;
-    private final Map<String, String> abbrevMap = new HashMap<>();
-    private final PlanRepository planRepo;
+    private final Map<String, String> abbrevMap;
 
     private static final String[] PLAN_TEMPLATES = {
             "1w", "2w", "4w", "1d", "3d", "7d", "1m", "3m", "6m", ":cd",
             "5", "55", "6", "8", "2", "4", "0", "1"
     };
 
-    public PlanFollowupAction(IAITextAreaManager textAreaManager, IAMProblemAction problemAction) {
+    public PlanFollowupAction(IAITextAreaManager textAreaManager,
+                              IAMProblemAction problemAction,
+                              AbbreviationService abbreviationService,
+                              PlanHistoryService planHistoryService) {
         this.textAreaManager = textAreaManager;
         this.problemAction = problemAction;
-        this.planRepo = new PlanRepository(getDbPath("plan_history.db"));
-        initDatabases();
+        this.planHistoryService = planHistoryService;
+        this.abbrevMap = abbreviationService.getAbbreviations();
+        initStore();
         createEditorWindow();
     }
 
@@ -63,24 +59,11 @@ public class PlanFollowupAction {
         editorStage.showAndWait();
     }
 
-    private void initDatabases() {
+    private void initStore() {
         try {
-            Class.forName("org.sqlite.JDBC");
-            initAbbrevDatabase();
-            planRepo.init();
-        } catch (Exception e) {
-            showError("Failed to initialize databases: " + e.getMessage());
-        }
-    }
-
-    private void initAbbrevDatabase() throws Exception {
-        Path dbFile = getDbPath("abbreviations.db");
-        if (!Files.exists(dbFile.getParent())) Files.createDirectories(dbFile.getParent());
-        String url = "jdbc:sqlite:" + dbFile.toAbsolutePath();
-        try (Connection conn = DriverManager.getConnection(url); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT * FROM abbreviations")) {
-            while (rs.next()) {
-                abbrevMap.put(rs.getString("short"), rs.getString("full"));
-            }
+            planHistoryService.initialize();
+        } catch (SQLException e) {
+            showError("Failed to initialize plan history: " + e.getMessage());
         }
     }
 
@@ -189,8 +172,8 @@ public class PlanFollowupAction {
                 }
                 new Thread(() -> {
                     try {
-                        planRepo.savePlan("P>", expandedText, null, LocalDate.now().toString());
-                    } catch (Exception ex) {
+                        planHistoryService.save("P>", expandedText, null, LocalDate.now().toString());
+                    } catch (SQLException ex) {
                         System.err.println("Failed to save plan history: " + ex.getMessage());
                     }
                 }).start();
@@ -238,13 +221,6 @@ public class PlanFollowupAction {
         };
     }
 
-    private Path getDbPath(String fileName) {
-        Path p = Paths.get("").toAbsolutePath();
-        while (p != null && !Files.exists(p.resolve("gradlew"))) {
-            p = p.getParent();
-        }
-        return (p != null) ? p.resolve("app/db/").resolve(fileName) : Paths.get("app/db").resolve(fileName);
-    }
 
     private Label createStyledLabel(String text, String style) {
         Label label = new Label(text);
@@ -256,29 +232,4 @@ public class PlanFollowupAction {
         Platform.runLater(() -> new Alert(Alert.AlertType.ERROR, message).showAndWait());
     }
 
-    static final class PlanRepository {
-        private final Path dbFile;
-
-        PlanRepository(Path dbFile) {
-            this.dbFile = Objects.requireNonNull(dbFile);
-        }
-
-        void init() throws Exception {
-            Files.createDirectories(dbFile.getParent());
-            try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + dbFile.toAbsolutePath()); Statement st = c.createStatement()) {
-                st.executeUpdate("CREATE TABLE IF NOT EXISTS plan_history (id INTEGER PRIMARY KEY, created_at TEXT NOT NULL, section TEXT, content TEXT, patient_id TEXT, encounter_date TEXT);");
-            }
-        }
-
-        void savePlan(String section, String content, String patientId, String encounterDate) throws Exception {
-            try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + dbFile.toAbsolutePath()); PreparedStatement ps = c.prepareStatement("INSERT INTO plan_history (created_at, section, content, patient_id, encounter_date) VALUES (?,?,?,?,?)")) {
-                ps.setString(1, LocalDateTime.now().toString());
-                ps.setString(2, section);
-                ps.setString(3, content);
-                ps.setString(4, patientId);
-                ps.setString(5, encounterDate);
-                ps.executeUpdate();
-            }
-        }
-    }
 }

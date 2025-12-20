@@ -1,24 +1,28 @@
 package com.emr.gds;
 
 import com.emr.gds.core.db.AppDatabaseManager;
-import com.emr.gds.core.repository.AbbreviationRepository;
-import com.emr.gds.infrastructure.persistence.jdbc.JdbcAbbreviationRepository;
-import com.emr.gds.main.imaging.ChestXrayReviewStage;
-import com.emr.gds.main.ekg.EkgReportStage;
-import com.emr.gds.main.ekg.EkgSimpleReportApp;
-import com.emr.gds.main.ekg.EkgQuickInterpreter;
-import com.emr.gds.main.allergy.AllergyApp;
-import com.emr.gds.main.bone.DexaRiskAssessmentApp;
+import com.emr.gds.repository.sqlite.SqliteAbbreviationRepository;
+import com.emr.gds.repository.sqlite.SqlitePlanHistoryRepository;
+import com.emr.gds.repository.sqlite.SqliteProblemRepository;
+import com.emr.gds.service.AbbreviationService;
+import com.emr.gds.service.PlanHistoryService;
+import com.emr.gds.service.ProblemListService;
+import com.emr.gds.features.imaging.ChestXrayReviewStage;
+import com.emr.gds.features.ekg.EkgReportStage;
+import com.emr.gds.features.ekg.EkgSimpleReportApp;
+import com.emr.gds.features.ekg.EkgQuickInterpreter;
+import com.emr.gds.features.allergy.AllergyApp;
+import com.emr.gds.features.bone.DexaRiskAssessmentApp;
 import com.emr.gds.input.IAIFreqFrame;
 import com.emr.gds.input.IAIFxTextAreaManager;
 import com.emr.gds.input.IAIMain;
 import com.emr.gds.input.IAITextAreaManager;
-import com.emr.gds.main.custom_ui.IAMButtonAction;
-import com.emr.gds.main.custom_ui.IAMFunctionkey;
-import com.emr.gds.main.custom_ui.IAMProblemAction;
-import com.emr.gds.main.custom_ui.IAMTextArea;
-import com.emr.gds.main.custom_ui.IAMTextFormatUtil;
-import com.emr.gds.main.custom_ui.TextAreaControlProcessor;
+import com.emr.gds.shared.ui.IAMButtonAction;
+import com.emr.gds.shared.ui.IAMFunctionkey;
+import com.emr.gds.shared.ui.IAMProblemAction;
+import com.emr.gds.shared.ui.IAMTextArea;
+import com.emr.gds.shared.ui.IAMTextFormatUtil;
+import com.emr.gds.shared.ui.TextAreaControlProcessor;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
@@ -45,15 +49,14 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import com.emr.gds.main.medication.MedicationCategory;
-import com.emr.gds.main.thyroid.ThyroidLauncher;
+import com.emr.gds.features.medication.MedicationCategory;
+import com.emr.gds.features.thyroid.ThyroidLauncher;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -88,8 +91,13 @@ public class IttiaApp extends Application {
     private IAMProblemAction problemAction;
     private IAMButtonAction buttonAction;
     private IAMTextArea textAreaManager;
-    private AbbreviationRepository abbrevRepository;
     private final Map<String, String> abbrevMap = new HashMap<>();
+    private final AbbreviationService abbreviationService =
+            new AbbreviationService(new SqliteAbbreviationRepository(), abbrevMap);
+    private final ProblemListService problemListService =
+            new ProblemListService(new SqliteProblemRepository());
+    private final PlanHistoryService planHistoryService =
+            new PlanHistoryService(new SqlitePlanHistoryRepository());
     private IAIFreqFrame freqStage; // Manages the vital signs window
     private IAMFunctionkey functionKeyHandler;
     private Stage mainStage;
@@ -201,8 +209,7 @@ public class IttiaApp extends Application {
         javafx.concurrent.Task<Map<String, String>> loadTask = new javafx.concurrent.Task<>() {
             @Override
             protected Map<String, String> call() throws Exception {
-                AbbreviationRepository repo = new JdbcAbbreviationRepository();
-                return repo.findAll();
+                return abbreviationService.loadAll();
             }
         };
 
@@ -272,19 +279,15 @@ public class IttiaApp extends Application {
      * Initializes database connection and core application managers.
      */
     private void initializeApplicationComponents(Map<String, String> loadedAbbreviations) throws IOException, ClassNotFoundException, SQLException {
-        // Initialize Repository
-        abbrevRepository = new JdbcAbbreviationRepository();
-        Connection abbrevConnection = AppDatabaseManager.getInstance().getAbbreviationConnection();
-        
         // Load Data
-        abbrevMap.clear();
-        if (loadedAbbreviations != null) {
+        if (loadedAbbreviations != null && loadedAbbreviations != abbrevMap) {
+            abbrevMap.clear();
             abbrevMap.putAll(loadedAbbreviations);
         }
         
-        problemAction = new IAMProblemAction(this);
-        textAreaManager = new IAMTextArea(abbrevMap, problemAction);
-        buttonAction = new IAMButtonAction(this, abbrevConnection, abbrevMap);
+        problemAction = new IAMProblemAction(this, problemListService);
+        textAreaManager = new IAMTextArea(abbrevMap, problemAction, abbreviationService, planHistoryService);
+        buttonAction = new IAMButtonAction(this, abbreviationService);
         textAreaManager.setAssessmentDoubleClickHandler((textArea, index) -> buttonAction.openKcd9Manager());
         functionKeyHandler = new IAMFunctionkey(this);
     }
@@ -422,7 +425,7 @@ public class IttiaApp extends Application {
 
             Button labCodeButton = new Button("LabCode");
             labCodeButton.getStyleClass().add("button-accent");
-            labCodeButton.setOnAction(e -> com.emr.gds.main.clinicalLab.ClinicalLabLauncher.open());
+            labCodeButton.setOnAction(e -> com.emr.gds.features.clinicalLab.ClinicalLabLauncher.open());
             
             bottomBar.getItems().add(new Separator());
             bottomBar.getItems().add(categoryButton);
@@ -473,7 +476,7 @@ public class IttiaApp extends Application {
      * Opens the EMR template editor.
      */
     private void openTemplateEditor() {
-        com.emr.gds.main.template.TemplateEditStage.open(templateContent ->
+        com.emr.gds.features.template.TemplateEditStage.open(templateContent ->
             textAreaManager.parseAndAppendTemplate(templateContent)
         );
     }
