@@ -1,7 +1,7 @@
-package com.emr.gds.main.medication.db;
+package com.emr.gds.features.medication.db;
 
-import com.emr.gds.main.medication.model.MedicationGroup;
-import com.emr.gds.main.medication.model.MedicationItem;
+import com.emr.gds.features.medication.model.MedicationGroup;
+import com.emr.gds.features.medication.model.MedicationItem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import java.io.File;
