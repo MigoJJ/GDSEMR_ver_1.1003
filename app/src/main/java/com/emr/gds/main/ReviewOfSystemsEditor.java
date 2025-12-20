@@ -92,7 +92,7 @@ public class ReviewOfSystemsEditor {
     private String generateReport() {
         StringBuilder report = new StringBuilder();
         report.append("REVIEW OF SYSTEMS:\n");
-        report.append("================================================================================\n\n");
+        report.append("=========================\n\n");
 
         boolean hasSelections = false;
 
@@ -135,7 +135,7 @@ public class ReviewOfSystemsEditor {
             return "No symptoms selected.";
         }
 
-        report.append("================================================================================\n");
+        report.append("=========================\n\n");
         return report.toString();
     }
 

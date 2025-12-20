@@ -448,7 +448,7 @@ public class EMRPMH extends Application {
      */
     private String buildSummaryText(boolean applySaveLogic) {
         StringBuilder sb = new StringBuilder();
-        sb.append("PMH>\n");
+//        sb.append("PMH>\n");
         sb.append("Past Mdedical History-----------\n");
 
         List<String> checkedLines = new ArrayList<>();
