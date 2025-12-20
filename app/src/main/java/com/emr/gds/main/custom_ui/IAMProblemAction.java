@@ -308,7 +308,7 @@ public class IAMProblemAction {
         if (scratchpadArea == null) return;
 
         List<String> orderedTitles = Arrays.asList(IAMTextArea.TEXT_AREA_TITLES);
-        StringJoiner sj = new StringJoiner("\n\n"); // Use double newline to separate sections
+        StringJoiner sj = new StringJoiner("\n");
 
         for (String title : orderedTitles) {
             String value = scratchpadEntries.get(title);
@@ -317,7 +317,7 @@ public class IAMProblemAction {
                                             .filter(line -> !line.isBlank())
                                             .collect(Collectors.joining("\n"));
                 if (!filteredValue.isEmpty()) {
-                    sj.add(title + "\n" + filteredValue); // Add newline after title
+                    sj.add(title + "\n" + filteredValue);
                 }
             }
         }

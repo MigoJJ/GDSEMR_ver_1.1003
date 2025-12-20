@@ -447,9 +447,12 @@ public class EMRPMH extends Application {
      * @return The formatted summary string.
      */
     private String buildSummaryText(boolean applySaveLogic) {
-        StringBuilder sb = new StringBuilder("Past Mdedical History-----------\n");
-        boolean hasContent = false;
-        List<String> lines = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+        sb.append("PMH>\n");
+        sb.append("Past Mdedical History-----------\n");
+
+        List<String> checkedLines = new ArrayList<>();
+        List<String> uncheckedLines = new ArrayList<>();
 
         boolean allDeniedSelected = pmhChecks.getOrDefault("All denied allergies...", new CheckBox()).isSelected();
 
@@ -457,39 +460,63 @@ public class EMRPMH extends Application {
             CheckBox cb = pmhChecks.get(key);
             String note = pmhNotes.get(key).getText().trim();
 
-            if (cb.isSelected() || !note.isEmpty()) {
-                hasContent = true;
+            // UPGRADE: Special logic inspired by Swing version
+            if (applySaveLogic && key.equals("All denied allergies...") && cb.isSelected()) {
+                String date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+                checkedLines.add("▣ Allergy: As of " + date
+                        + ", the patient denies any known allergies to food, injections, or medications.");
+                continue; // Skip the generic line for this
+            }
 
-                // UPGRADE: Special logic inspired by Swing version
-                if (applySaveLogic && key.equals("All denied allergies...") && cb.isSelected()) {
-                    String date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-                    lines.add("Allergy: As of " + date
-                            + ", the patient denies any known allergies to food, injections, or medications.");
-                    continue; // Skip the generic line for this
-                }
-                
-                // Don't show specific allergies if "All denied" is checked.
-                if (allDeniedSelected && key.contains("Allergy") && !key.equals("All denied allergies...")) {
-                    continue;
-                }
+            // Don't show specific allergies if "All denied" is checked.
+            if (allDeniedSelected && key.contains("Allergy") && !key.equals("All denied allergies...")) {
+                continue;
+            }
 
-                StringBuilder line = new StringBuilder();
-                line.append(cb.isSelected() ? "▣ " : "□ ").append(key);
-                if (!note.isEmpty()) {
-                    line.append(": ").append(note.replace("\n", " | "));
+            boolean include = cb.isSelected() || !note.isEmpty() || DEFAULT_DOT_TARGETS.contains(key);
+            if (include) {
+                String noteText = note.isEmpty() ? "." : note.replace("\n", " | ");
+                String line = (cb.isSelected() ? "▣ " : "□ ") + key + ": " + noteText;
+                if (cb.isSelected()) {
+                    checkedLines.add(line);
+                } else {
+                    uncheckedLines.add(line);
                 }
-                lines.add(line.toString());
             }
         }
 
-        if (!hasContent) {
+        if (checkedLines.isEmpty() && uncheckedLines.isEmpty()) {
             return "PMH>\n(No items selected)";
         }
-        // Checked items first, keep original relative order within groups.
-        lines.stream()
-                .sorted(Comparator.comparing((String line) -> line.startsWith("□ ")).thenComparing(lines::indexOf))
-                .forEach(l -> sb.append(l).append("\n"));
+
+        for (String line : checkedLines) {
+            sb.append(line).append("\n");
+        }
+
+        if (!checkedLines.isEmpty() && !uncheckedLines.isEmpty()) {
+            sb.append("\n");
+        }
+
+        int columnWidth = 48;
+
+        for (int i = 0; i < uncheckedLines.size(); i += 2) {
+            String left = uncheckedLines.get(i);
+            String right = (i + 1 < uncheckedLines.size()) ? uncheckedLines.get(i + 1) : null;
+            if (right == null) {
+                sb.append(left).append("\n");
+            } else {
+                sb.append(padRight(left, columnWidth)).append(right).append("\n");
+            }
+        }
+
         return sb.toString();
+    }
+
+    private static String padRight(String text, int width) {
+        if (text.length() >= width) {
+            return text + " ";
+        }
+        return String.format("%-" + width + "s", text);
     }
 
 

@@ -49,8 +49,8 @@ public class IAMButtonAction {
 
     private static final String TEMPLATE_MENU_TEXT = "Templates";
     private static final String INSERT_DATE_BUTTON_TEXT = "Date (Ctrl+I)";
-    private static final String AUTO_FORMAT_BUTTON_TEXT = "Auto Format (Ctrl+Shift+F)";
-    private static final String COPY_ALL_BUTTON_TEXT = "Copy All (Ctrl+Shift+C)";
+    private static final String AUTO_FORMAT_BUTTON_TEXT = "Auto Format";
+    private static final String COPY_ALL_BUTTON_TEXT = "Copy All";
     private static final String MANAGE_ABBREV_BUTTON_TEXT = "Manage Abbrs...";
     private static final String CLEAR_ALL_BUTTON_TEXT = "CE";
     private static final String HINT_LABEL_TEXT = "Focus area: Ctrl+1..Ctrl+0 | Double-click problem to insert";

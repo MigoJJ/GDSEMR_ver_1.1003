@@ -77,7 +77,7 @@ public class IttiaApp extends Application {
     // ================================
     // Constants
     // ================================
-    private static final String APP_TITLE = "GDSEMR ITTIA – EMR Prototype (JavaFX)";
+    private static final String APP_TITLE = " GDSEMRITTIA  EMR prototype(JAVAFX)";
     private static final int SCENE_WIDTH = 1350;
     private static final int SCENE_HEIGHT = 1000;
     private static final int INITIAL_FOCUS_AREA = 0; // Corresponds to the first text area
