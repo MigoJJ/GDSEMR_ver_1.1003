@@ -18,7 +18,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane prefHeight="900.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.emr.gds.features.history.FamilyHistoryController">
+<BorderPane prefHeight="900.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.emr.gds.features.history.adapter.in.ui.FamilyHistoryController">
    <center>
       <SplitPane dividerPositions="0.75" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0" BorderPane.alignment="CENTER">
         <items>

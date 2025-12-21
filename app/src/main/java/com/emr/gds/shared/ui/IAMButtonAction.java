@@ -148,11 +148,11 @@ public class IAMButtonAction {
 
         RadioMenuItem small = new RadioMenuItem("Small");
         small.setToggleGroup(fontGroup);
+        small.setSelected(true);
         small.setOnAction(e -> updateRootStyleClass("font-small"));
 
         RadioMenuItem medium = new RadioMenuItem("Medium");
         medium.setToggleGroup(fontGroup);
-        medium.setSelected(true);
         medium.setOnAction(e -> updateRootStyleClass("font-medium"));
 
         RadioMenuItem large = new RadioMenuItem("Large");

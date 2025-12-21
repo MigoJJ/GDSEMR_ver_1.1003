@@ -1,7 +1,7 @@
 /* Global Variables */
 .root {
     -fx-font-family: "Georgia", "Times New Roman", serif;
-    -fx-font-size: 15px;
+    -fx-font-size: 13px;
     
     /* Sezane-esque Theme Colors */
     primary-color: #1d2d44; /* Deep Navy */
