@@ -40,6 +40,18 @@ public final class StageSizing {
         stage.centerOnScreen();
     }
 
+    public static void moveToTopRight(Stage stage) {
+        Rectangle2D bounds = Screen.getPrimary().getVisualBounds();
+        stage.setX(bounds.getMaxX() - stage.getWidth());
+        stage.setY(bounds.getMinY());
+    }
+
+    public static void moveToTopLeft(Stage stage) {
+        Rectangle2D bounds = Screen.getPrimary().getVisualBounds();
+        stage.setX(bounds.getMinX());
+        stage.setY(bounds.getMinY());
+    }
+
     private static double clamp(double value, double min, double max) {
         return Math.max(min, Math.min(max, value));
     }
