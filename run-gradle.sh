@@ -42,8 +42,8 @@ main() {
     echo "===========================================================" | tee -a "$LOG_FILE"
 
     # Check if in correct directory
-    if [[ ! -f "$PROJECT_DIR/settings.gradle" ]]; then
-        error "Not in a Gradle project root! Missing settings.gradle"
+    if [[ ! -f "$PROJECT_DIR/settings.gradle" && ! -f "$PROJECT_DIR/settings.gradle.kts" ]]; then
+        error "Not in a Gradle project root! Missing settings.gradle or settings.gradle.kts"
         error "Expected location: $PROJECT_DIR"
         exit 1
     fi
