@@ -17,6 +17,7 @@ public class AppDatabaseManager {
     private static final AppDatabaseManager INSTANCE = new AppDatabaseManager();
 
     private Connection abbreviationConnection;
+    private Connection historyConnection;
 
     private AppDatabaseManager() {
         // singleton
@@ -34,6 +35,16 @@ public class AppDatabaseManager {
             abbreviationConnection = openConnection("abbreviations.db");
         }
         return abbreviationConnection;
+    }
+
+    /**
+     * Returns a shared connection to the history database.
+     */
+    public synchronized Connection getHistoryConnection() throws SQLException {
+        if (historyConnection == null || historyConnection.isClosed()) {
+            historyConnection = openConnection("history.db");
+        }
+        return historyConnection;
     }
 
     private Connection openConnection(String dbFileName) throws SQLException {
@@ -69,6 +80,8 @@ public class AppDatabaseManager {
     public synchronized void closeAll() {
         closeQuietly(abbreviationConnection);
         abbreviationConnection = null;
+        closeQuietly(historyConnection);
+        historyConnection = null;
     }
 
     private void closeQuietly(Connection conn) {

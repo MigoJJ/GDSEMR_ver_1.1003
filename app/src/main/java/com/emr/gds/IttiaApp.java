@@ -235,6 +235,7 @@ public class IttiaApp extends Application {
             
             // Build the main layout
             BorderPane root = buildRootLayout();
+            root.getStyleClass().add("font-small");
             Scene scene = new Scene(root, SCENE_WIDTH, SCENE_HEIGHT);
             
             // Load the CSS stylesheet

@@ -552,7 +552,7 @@ public class EMRPMH extends Application {
 
     private void openEMRFMH() {
         // Use the new JavaFX Stage
-        com.emr.gds.features.history.FamilyHistoryStage.open(textAreaManager, abbrevMap);
+        com.emr.gds.features.history.adapter.in.ui.FamilyHistoryStage.open(textAreaManager, abbrevMap);
     }
 
     private void showError(String header, Throwable t) {

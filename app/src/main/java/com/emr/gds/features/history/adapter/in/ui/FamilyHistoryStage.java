@@ -1,5 +1,8 @@
-package com.emr.gds.features.history;
+package com.emr.gds.features.history.adapter.in.ui;
 
+import com.emr.gds.features.history.adapter.out.persistence.JdbcHistoryRepository;
+import com.emr.gds.features.history.application.FamilyHistoryService;
+import com.emr.gds.features.history.domain.HistoryRepository;
 import com.emr.gds.input.IAITextAreaManager;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -16,8 +19,12 @@ public class FamilyHistoryStage {
             FXMLLoader loader = new FXMLLoader(FamilyHistoryStage.class.getResource("/fxml/family_history.fxml"));
             Parent root = loader.load();
 
+            // Dependency Injection
+            HistoryRepository repository = new JdbcHistoryRepository();
+            FamilyHistoryService service = new FamilyHistoryService(repository);
+
             FamilyHistoryController controller = loader.getController();
-            controller.setManagers(textAreaManager, abbrevMap);
+            controller.setManagers(textAreaManager, abbrevMap, service);
 
             Stage stage = new Stage();
             stage.setTitle("Endocrinology - Family Medical History (JavaFX)");

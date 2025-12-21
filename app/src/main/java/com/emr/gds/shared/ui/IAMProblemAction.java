@@ -232,6 +232,7 @@ public class IAMProblemAction {
 
     private TextArea createScratchpadTextArea() {
         TextArea textArea = new TextArea();
+        textArea.setStyle("-fx-font-size: 13px;"); // Default to small
         textArea.setPromptText("Scratchpad... (auto-updated from center areas)");
         textArea.setWrapText(true);
         textArea.setEditable(true);

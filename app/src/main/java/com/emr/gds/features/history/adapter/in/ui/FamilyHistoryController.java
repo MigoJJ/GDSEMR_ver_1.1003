@@ -1,9 +1,13 @@
-package com.emr.gds.features.history;
+package com.emr.gds.features.history.adapter.in.ui;
 
+import com.emr.gds.features.history.application.FamilyHistoryService;
+import com.emr.gds.features.history.domain.ConditionCategory;
 import com.emr.gds.input.IAITextAreaManager;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
@@ -14,16 +18,9 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 public class FamilyHistoryController {
@@ -41,21 +38,18 @@ public class FamilyHistoryController {
 
     private IAITextAreaManager textAreaManager;
     private Map<String, String> abbrevMap;
+    private FamilyHistoryService service;
 
-    private ObservableList<String> endocrineData;
-    private ObservableList<String> cancerData;
-    private ObservableList<String> cardioData;
-    private ObservableList<String> geneticData;
+    private ObservableList<String> endocrineData = FXCollections.observableArrayList();
+    private ObservableList<String> cancerData = FXCollections.observableArrayList();
+    private ObservableList<String> cardioData = FXCollections.observableArrayList();
+    private ObservableList<String> geneticData = FXCollections.observableArrayList();
 
-    private static final Path DATA_DIR = Paths.get("emr_fmh_data");
-    private static final Path ENDOCRINE_FILE = DATA_DIR.resolve("endocrine.txt");
-    private static final Path CANCER_FILE = DATA_DIR.resolve("cancer.txt");
-    private static final Path CARDIO_FILE = DATA_DIR.resolve("cardiovascular.txt");
-    private static final Path GENETIC_FILE = DATA_DIR.resolve("genetic.txt");
-
-    public void setManagers(IAITextAreaManager manager, Map<String, String> abbrevMap) {
+    public void setManagers(IAITextAreaManager manager, Map<String, String> abbrevMap, FamilyHistoryService service) {
         this.textAreaManager = manager;
         this.abbrevMap = (abbrevMap != null) ? abbrevMap : Collections.emptyMap();
+        this.service = service;
+        loadAllConditions();
     }
 
     @FXML
@@ -65,9 +59,6 @@ public class FamilyHistoryController {
                 "Mother", "Father", "Sister", "Brother",
                 "Grandmother", "Grandfather", "Aunt", "Uncle", "Cousin", "Child"
         ));
-
-        // Load Data
-        loadAllConditions();
 
         // Bind Lists
         setupListView(endocrineList, endocrineData);
@@ -90,21 +81,26 @@ public class FamilyHistoryController {
     }
 
     private void loadAllConditions() {
-        endocrineData = loadConditions(ENDOCRINE_FILE, getDefaultEndocrine());
-        cancerData = loadConditions(CANCER_FILE, getDefaultCancer());
-        cardioData = loadConditions(CARDIO_FILE, getDefaultCardiovascular());
-        geneticData = loadConditions(GENETIC_FILE, getDefaultGenetic());
-    }
+        if (service == null) return;
 
-    private ObservableList<String> loadConditions(Path file, List<String> defaults) {
-        try {
-            if (Files.exists(file)) {
-                return FXCollections.observableArrayList(Files.readAllLines(file));
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() {
+                var endocrine = service.getConditions(ConditionCategory.ENDOCRINE);
+                var cancer = service.getConditions(ConditionCategory.CANCER);
+                var cardio = service.getConditions(ConditionCategory.CARDIOVASCULAR);
+                var genetic = service.getConditions(ConditionCategory.GENETIC);
+
+                Platform.runLater(() -> {
+                    endocrineData.setAll(endocrine);
+                    cancerData.setAll(cancer);
+                    cardioData.setAll(cardio);
+                    geneticData.setAll(genetic);
+                });
+                return null;
             }
-        } catch (IOException e) {
-            // ignore
-        }
-        return FXCollections.observableArrayList(defaults);
+        };
+        new Thread(task).start();
     }
 
     private void filterLists(String filter) {
@@ -175,10 +171,12 @@ public class FamilyHistoryController {
     private void handleAddCondition() {
         // Find focused list view to add to
         ListView<String> target = null;
-        if (endocrineList.isFocused()) target = endocrineList;
-        else if (cancerList.isFocused()) target = cancerList;
-        else if (cardioList.isFocused()) target = cardioList;
-        else if (geneticList.isFocused()) target = geneticList;
+        ConditionCategory category = null;
+        
+        if (endocrineList.isFocused()) { target = endocrineList; category = ConditionCategory.ENDOCRINE; }
+        else if (cancerList.isFocused()) { target = cancerList; category = ConditionCategory.CANCER; }
+        else if (cardioList.isFocused()) { target = cardioList; category = ConditionCategory.CARDIOVASCULAR; }
+        else if (geneticList.isFocused()) { target = geneticList; category = ConditionCategory.GENETIC; }
 
         if (target == null) {
             showAlert(Alert.AlertType.WARNING, "No Selection", "Click on a condition list first (to give it focus).");
@@ -187,35 +185,40 @@ public class FamilyHistoryController {
         
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Add New Condition");
-        dialog.setHeaderText("Add to selected list");
+        dialog.setHeaderText("Add to " + category);
         dialog.setContentText("Condition name:");
         
         ListView<String> finalTarget = target;
+        ConditionCategory finalCategory = category;
+
         dialog.showAndWait().ifPresent(name -> {
             String trimmed = name.trim();
-            // Get source list from FilteredList
-            FilteredList<String> fl = (FilteredList<String>) finalTarget.getItems();
-            @SuppressWarnings("unchecked")
-            ObservableList<String> source = (ObservableList<String>) fl.getSource();
-            
-            if (!trimmed.isEmpty() && !source.contains(trimmed)) {
-                source.add(trimmed);
+            if (!trimmed.isEmpty()) {
+                // Async add to DB
+                Task<Void> task = new Task<>() {
+                    @Override
+                    protected Void call() {
+                        service.addCondition(finalCategory, trimmed);
+                        return null;
+                    }
+                };
+                task.setOnSucceeded(e -> { 
+                     // Update UI
+                    FilteredList<String> fl = (FilteredList<String>) finalTarget.getItems();
+                    @SuppressWarnings("unchecked")
+                    ObservableList<String> source = (ObservableList<String>) fl.getSource();
+                    if (!source.contains(trimmed)) {
+                        source.add(trimmed);
+                    }
+                });
+                new Thread(task).start();
             }
         });
     }
 
     @FXML
     private void handleSaveLists() {
-        try {
-            Files.createDirectories(DATA_DIR);
-            Files.write(ENDOCRINE_FILE, endocrineData);
-            Files.write(CANCER_FILE, cancerData);
-            Files.write(CARDIO_FILE, cardioData);
-            Files.write(GENETIC_FILE, geneticData);
-            showAlert(Alert.AlertType.INFORMATION, "Saved", "Condition lists saved successfully.");
-        } catch (IOException ex) {
-            showAlert(Alert.AlertType.ERROR, "Save Failed", "Could not save lists: " + ex.getMessage());
-        }
+         showAlert(Alert.AlertType.INFORMATION, "Auto-Saved", "Conditions are now saved automatically to the database.");
     }
 
     @FXML
@@ -278,19 +281,5 @@ public class FamilyHistoryController {
         alert.setHeaderText(null);
         alert.setContentText(content);
         alert.showAndWait();
-    }
-    
-    // Default Data Providers
-    private List<String> getDefaultEndocrine() {
-        return Arrays.asList("Type 1 Diabetes", "Type 2 Diabetes", "Hypothyroidism", "Hyperthyroidism", "Thyroid Cancer");
-    }
-    private List<String> getDefaultCancer() {
-        return Arrays.asList("Breast Cancer", "Lung Cancer", "Prostate Cancer", "Colon Cancer", "Skin Cancer");
-    }
-    private List<String> getDefaultCardiovascular() {
-        return Arrays.asList("Coronary Artery Disease", "Hypertension", "Heart Attack", "Stroke", "Arrhythmia");
-    }
-    private List<String> getDefaultGenetic() {
-        return Arrays.asList("Cystic Fibrosis", "Huntington's Disease", "Down Syndrome", "Sickle Cell Anemia", "Hemophilia");
     }
 }
