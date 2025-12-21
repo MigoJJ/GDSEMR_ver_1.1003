@@ -1,8 +1,0 @@
-plugins {
-    id 'java-library'
-}
-
-dependencies {
-    // utilities 모듈에서 외부 라이브-리 쓰면 여기에 추가
-    implementation project(':list')
-}
