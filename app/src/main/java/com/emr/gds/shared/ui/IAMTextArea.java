@@ -49,14 +49,14 @@ public class IAMTextArea {
     };
 
     private static final String BASE_TEXT_TWEAKS = 
-            "-fx-prompt-text-fill: rgba(0,0,0,0.55);" +
+            "-fx-prompt-text-fill: derive(text-color, 45%);" +
             "-fx-highlight-fill: rgba(0,0,0,0.15);" +
             "-fx-highlight-text-fill: #000000;";
 
     // Style for unfocused text areas (sun-washed sand/ochre theme)
     private static final String STYLE_UNFOCUSED = 
             "-fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #F7E6B5, #EED28A, #DCC06A);" +
-            "-fx-text-fill: #0A2540;" +
+            "-fx-text-fill: text-color;" +
             "-fx-border-color: #C97B2B;" +
             "-fx-border-width: 1.5;" +
             "-fx-background-insets: 0;" +
@@ -68,7 +68,7 @@ public class IAMTextArea {
     // Style for focused text areas (bold saffron to coral for high attention)
     private static final String STYLE_FOCUSED = 
             "-fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #FFD27E, #FFB45A, #FF8A4C);" +
-            "-fx-text-fill: #0A2540;" +
+            "-fx-text-fill: text-color;" +
             "-fx-border-color: #8C3B2E;" +
             "-fx-border-width: 3;" +
             "-fx-background-insets: 0;" +
@@ -80,7 +80,7 @@ public class IAMTextArea {
     // Style for hovered text areas (tropical lagoon teals)
     private static final String STYLE_HOVER = 
             "-fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #CFE9DF, #A7D8C6, #7FC6B3);" +
-            "-fx-text-fill: #0A2540;" +
+            "-fx-text-fill: text-color;" +
             "-fx-border-color: #2C8C7A;" +
             "-fx-border-width: 2;" +
             "-fx-background-insets: 0;" +
@@ -223,7 +223,7 @@ public class IAMTextArea {
     private String styleString(String background, String borderColor, double borderWidth, String effect) {
         return String.format(
                 "-fx-background-color: %s;" +
-                "-fx-text-fill: #0A2540;" +
+                "-fx-text-fill: text-color;" +
                 "-fx-border-color: %s;" +
                 "-fx-border-width: %.1f;" +
                 "-fx-background-insets: 0;" +

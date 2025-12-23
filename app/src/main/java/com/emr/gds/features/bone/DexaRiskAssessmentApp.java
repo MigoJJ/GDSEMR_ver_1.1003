@@ -78,6 +78,7 @@ public class DexaRiskAssessmentApp extends Application {
         scoreField.setPrefWidth(120);
         scoreField.setFont(Font.font("System", FontWeight.BOLD, 15));
         scoreField.setStyle("-fx-alignment: CENTER; -fx-background-color: #f0f8ff;");
+        scoreField.setOnAction(e -> ageField.requestFocus());
 
         ageField = new TextField();
         ageField.setPrefWidth(120);
