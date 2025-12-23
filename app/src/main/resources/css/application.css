@@ -8,11 +8,12 @@
     primary-dark: #0f172a; /* Darker Navy */
     secondary-color: #a63d40; /* Vintage Rust */
     accent-color: #e9c46a; /* Mustard/Gold */
-    background-color: #fdfbf7; /* Ecru/Cream */
+    background-color: linear-gradient(to bottom right, #fdfbf7, #f4efe3); /* Ecru/Cream gradient */
     surface-color: #ffffff;
     text-color: #1d2d44; /* Navy Text */
     text-color-light: #f8fafc;
     border-color: #e2e8f0;
+    -fx-background-color: background-color;
 }
 
 /* Dark Theme Overrides */
@@ -22,7 +23,7 @@
     secondary-color: #ef4444;
     background-color: #0f172a;
     surface-color: #1e293b;
-    text-color: #f1f5f9;
+    text-color: #fff7e6;
     text-color-light: #f8fafc;
     border-color: #334155;
 }
@@ -104,6 +105,32 @@
     -fx-text-fill: text-color;
     -fx-highlight-fill: secondary-color;
     -fx-highlight-text-fill: white;
+}
+
+.root.dark-theme .menu-button,
+.root.dark-theme .menu-button .label {
+    -fx-text-fill: #000000;
+}
+
+.root.dark-theme .text-area {
+    -fx-text-fill: #ffffff;
+}
+
+.label,
+.text-field,
+.combo-box,
+.check-box,
+.radio-button,
+.menu,
+.menu-item,
+.menu-item .label {
+    -fx-text-fill: text-color;
+}
+
+.text-field,
+.combo-box {
+    -fx-control-inner-background: surface-color;
+    -fx-prompt-text-fill: derive(text-color, 45%);
 }
 
 .separator {

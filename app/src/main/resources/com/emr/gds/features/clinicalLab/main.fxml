@@ -33,7 +33,7 @@
         <BorderPane>
             <top>
                 <ToolBar style="-fx-background-color: linear-gradient(to bottom, #ffffff, #f8f9fa); -fx-padding: 10;">
-                    <TextField fx:id="searchField" promptText="Search test name or category..." prefWidth="300"/>
+                    <TextField fx:id="searchField" promptText="Search test name or category..." prefWidth="300" onAction="#handleSearch"/>
                     <Button text="🔍 Search" onAction="#handleSearch" style="-fx-background-color: #007bff; -fx-text-fill: white;"/>
                     <Separator/>
                     <Button text="🔄 Refresh" onAction="#loadData" style="-fx-background-color: #6c757d; -fx-text-fill: white;"/>

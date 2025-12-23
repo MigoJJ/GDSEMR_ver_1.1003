@@ -333,22 +333,19 @@ public class ClinicalLabController implements Initializable {
 
     @FXML
     private void handleSaveToEmr() {
-        ClinicalLabItem selected = labTable.getSelectionModel().getSelectedItem();
-        if (selected == null) {
+        if (selectedItems.isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("No Selection");
-            alert.setHeaderText("No Item Selected");
-            alert.setContentText("Please select an item to save to EMR.");
+            alert.setHeaderText("No Items Selected");
+            alert.setContentText("Please add items to Selected Tests before saving to EMR.");
             alert.showAndWait();
             return;
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("Lab Item: ").append(selected.getTestName()).append(" (").append(selected.getCategory()).append(")\n");
-        sb.append("  Male Range: ").append(selected.getMaleReferenceRange()).append("\n");
-        sb.append("  Female Range: ").append(selected.getFemaleReferenceRange()).append("\n");
-        sb.append("  Codes: ").append(selected.getCodes()).append("\n");
-
+        for (String item : selectedItems) {
+            sb.append("Lab Item: ").append(item).append("\n");
+        }
         com.emr.gds.input.IAIMain.getTextAreaManager().appendTextToSection(9, sb.toString());
     }
 
