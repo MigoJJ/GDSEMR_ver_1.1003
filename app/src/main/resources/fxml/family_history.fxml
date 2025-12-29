@@ -101,7 +101,9 @@
                            <children>
                               <Label text="Manage:" />
                               <TextField fx:id="searchField" promptText="Search conditions..." HBox.hgrow="ALWAYS" />
-                              <Button mnemonicParsing="false" onAction="#handleAddCondition" text="Add Condition" />
+                              <Button mnemonicParsing="false" onAction="#handleAddCondition" text="Add" />
+                              <Button mnemonicParsing="false" onAction="#handleEditCondition" text="Edit" />
+                              <Button mnemonicParsing="false" onAction="#handleDeleteCondition" text="Delete" />
                               <Button mnemonicParsing="false" onAction="#handleSaveLists" text="Save Lists" />
                            </children>
                         </HBox>

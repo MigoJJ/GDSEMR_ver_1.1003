@@ -1,15 +1,23 @@
 package com.emr.gds.features.history.domain;
 
 public enum ConditionCategory {
-    ENDOCRINE,
-    CANCER,
-    CARDIOVASCULAR,
-    GENETIC;
+    ENDOCRINE("Endocrine"),
+    CANCER("Cancer"),
+    CARDIOVASCULAR("Cardiovascular"),
+    GENETIC("Genetic");
+
+    private final String label;
+
+    ConditionCategory(String label) {
+        this.label = label;
+    }
+
+    public String getLabel() {
+        return label;
+    }
 
     @Override
     public String toString() {
-        // Capitalize first letter, lower case rest
-        String name = name();
-        return name.charAt(0) + name.substring(1).toLowerCase();
+        return label;
     }
 }
