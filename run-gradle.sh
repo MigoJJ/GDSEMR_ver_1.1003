@@ -60,31 +60,35 @@ main() {
     # log "Cleaning previous builds..."
     # "$GRADLE_WRAPPER" clean >> "$LOG_FILE" 2>&1
 
-    # Run the default task (usually 'bootRun' or 'run' for Spring Boot)
+    # Run provided tasks if passed, otherwise choose a sensible default.
     log "Starting Gradle build and run..."
     log "Check full log at: $LOG_FILE"
 
-    # Detect if it's a Spring Boot app and use bootRun, else use 'run'
-    if grep -q "org.springframework.boot" build.gradle 2>/dev/null || \
-       grep -q "id 'org.springframework.boot'" build.gradle.kts 2>/dev/null; then
-        TASK="bootRun"
+    if [[ "$#" -gt 0 ]]; then
+        TASKS=("$@")
     else
-        TASK="run"
+        # Detect if it's a Spring Boot app and use bootRun, else use 'run'
+        if grep -q "org.springframework.boot" build.gradle 2>/dev/null || \
+           grep -q "id 'org.springframework.boot'" build.gradle.kts 2>/dev/null; then
+            TASKS=("bootRun")
+        else
+            TASKS=("run")
+        fi
     fi
 
-    log "Executing: $GRADLE_WRAPPER $TASK"
+    log "Executing: $GRADLE_WRAPPER ${TASKS[*]}"
 
-    if "$GRADLE_WRAPPER" "$TASK"; then
-        log "Gradle task '$TASK' completed successfully!"
+    if "$GRADLE_WRAPPER" "${TASKS[@]}"; then
+        log "Gradle task '${TASKS[*]}' completed successfully!"
     else
-        error "Gradle task '$TASK' failed. See log above."
+        error "Gradle task '${TASKS[*]}' failed. See log above."
         exit 1
     fi
 }
 
 # --- Execute ---
 {
-    main
+    main "$@"
 } 2>&1 | tee -a "$LOG_FILE"
 
 echo

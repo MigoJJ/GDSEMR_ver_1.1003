@@ -2,6 +2,7 @@ package com.emr.gds.features.history.adapter.out.persistence;
 
 import com.emr.gds.core.db.AppDatabaseManager;
 import com.emr.gds.features.history.domain.ConditionCategory;
+import com.emr.gds.features.history.domain.HistoryPersistenceException;
 import com.emr.gds.features.history.domain.HistoryRepository;
 
 import java.sql.Connection;
@@ -11,8 +12,12 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class JdbcHistoryRepository implements HistoryRepository {
+
+    private static final Logger LOGGER = Logger.getLogger(JdbcHistoryRepository.class.getName());
 
     public JdbcHistoryRepository() {
         initializeDatabase();
@@ -28,7 +33,8 @@ public class JdbcHistoryRepository implements HistoryRepository {
              Statement stmt = conn.createStatement()) {
             stmt.execute(sql);
         } catch (SQLException e) {
-            e.printStackTrace(); // Log appropriately in real app
+            LOGGER.log(Level.SEVERE, "Failed to initialize history database.", e);
+            throw new HistoryPersistenceException("Failed to initialize history database.", e);
         }
     }
 
@@ -47,7 +53,8 @@ public class JdbcHistoryRepository implements HistoryRepository {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Failed to load conditions for " + category + ".", e);
+            throw new HistoryPersistenceException("Failed to load conditions for " + category + ".", e);
         }
         return results;
     }
@@ -64,7 +71,45 @@ public class JdbcHistoryRepository implements HistoryRepository {
             pstmt.executeUpdate();
             
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Failed to add condition '" + conditionName + "' for " + category + ".", e);
+            throw new HistoryPersistenceException("Failed to add condition '" + conditionName + "' for " + category + ".", e);
+        }
+    }
+
+    @Override
+    public void updateCondition(ConditionCategory category, String oldName, String newName) {
+        String sql = "UPDATE conditions SET name = ? WHERE category = ? AND name = ?";
+        try (Connection conn = AppDatabaseManager.getInstance().getHistoryConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, newName);
+            pstmt.setString(2, category.name());
+            pstmt.setString(3, oldName);
+            int rows = pstmt.executeUpdate();
+            
+            if (rows == 0) {
+                throw new HistoryPersistenceException("Condition '" + oldName + "' not found in category " + category);
+            }
+            
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to update condition '" + oldName + "' to '" + newName + "'.", e);
+            throw new HistoryPersistenceException("Failed to update condition.", e);
+        }
+    }
+
+    @Override
+    public void deleteCondition(ConditionCategory category, String conditionName) {
+        String sql = "DELETE FROM conditions WHERE category = ? AND name = ?";
+        try (Connection conn = AppDatabaseManager.getInstance().getHistoryConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, category.name());
+            pstmt.setString(2, conditionName);
+            pstmt.executeUpdate();
+            
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to delete condition '" + conditionName + "'.", e);
+            throw new HistoryPersistenceException("Failed to delete condition.", e);
         }
     }
 }

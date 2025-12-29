@@ -6,6 +6,7 @@ plugins {
 }
 
 dependencies {
+    implementation(platform(SpringBootPlugin.BOM_COORDINATES))
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")
 
