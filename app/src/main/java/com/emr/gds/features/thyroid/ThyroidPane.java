@@ -250,7 +250,15 @@ public class ThyroidPane extends VBox {
         txtFollowUpPlan.setPrefRowCount(3);
         txtSummaryOutput.setPromptText("Specialist summary...");
         txtSummaryOutput.setWrapText(true);
-        txtSummaryOutput.setPrefRowCount(8);
+        txtSummaryOutput.setPrefRowCount(10);
+        txtSummaryOutput.setMinHeight(200);
+        txtSummaryOutput.setStyle(
+                "-fx-control-inner-background: #fff5cc;" +
+                "-fx-border-color: #d35400;" +
+                "-fx-border-width: 2;" +
+                "-fx-font-family: \"Consolas\";" +
+                "-fx-font-size: 12px;"
+        );
     }
 
     private void buildLayout() {
@@ -497,12 +505,23 @@ public class ThyroidPane extends VBox {
 
         HBox buttons = new HBox(10, btnGenerateSummary, btnSaveQuit);
 
+        Label summaryLabel = new Label("Specialist Summary (Output):");
+        summaryLabel.setStyle("-fx-font-weight: bold;");
+
+        VBox summaryBox = new VBox(6, summaryLabel, txtSummaryOutput);
+        summaryBox.setStyle(
+                "-fx-background-color: #fdf5e6;" +
+                "-fx-border-color: #d35400;" +
+                "-fx-border-width: 2;" +
+                "-fx-padding: 8;"
+        );
+
         box.getChildren().addAll(
             intBox,
             new Label("Plan details:"),
             txtFollowUpPlan,
             buttons,
-            txtSummaryOutput
+            summaryBox
         );
         return styledPane("7. Plan & Summary", box);
     }

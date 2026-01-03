@@ -202,8 +202,8 @@ public class EMRPMH extends Application {
         outputArea = new TextArea();
         outputArea.setEditable(false);
         outputArea.setPrefRowCount(8); // Increased rows
-        outputArea.setWrapText(true);
-        outputArea.setFont(Font.font("Consolas", 11)); // Slightly increased: 9 -> 11
+        outputArea.setWrapText(false); // Keep columns aligned
+        outputArea.setFont(Font.font("Consolas", 12)); // Slightly increased for visibility
         outputArea.setPromptText("Live summary of selected PMH will appear here.");
         outputArea.getStyleClass().add("pmh-output");
         root.setBottom(buildFooter(outputArea));
@@ -327,14 +327,15 @@ public class EMRPMH extends Application {
                     -fx-background-color: transparent;
                 }
                 .pmh-output {
-                    -fx-background-color: #ffffff;
-                    -fx-control-inner-background: #ffffff;
+                    -fx-background-color: #fff7ed;
+                    -fx-control-inner-background: #fff7ed;
                     -fx-text-fill: #111827;
-                    -fx-border-color: #9ca3af;
-                    -fx-border-width: 1;
+                    -fx-border-color: #d97706;
+                    -fx-border-width: 2;
                     -fx-border-radius: 4;
                     -fx-font-family: 'Consolas', monospace;
-                    -fx-font-size: 11px;
+                    -fx-font-size: 12px;
+                    -fx-padding: 8;
                 }
                 .pmh-btn {
                     -fx-background-radius: 4; -fx-border-radius: 4;
@@ -497,7 +498,11 @@ public class EMRPMH extends Application {
             sb.append("\n");
         }
 
-        int columnWidth = 48;
+        int maxLeft = 0;
+        for (int i = 0; i < uncheckedLines.size(); i += 2) {
+            maxLeft = Math.max(maxLeft, uncheckedLines.get(i).length());
+        }
+        int columnWidth = Math.min(Math.max(maxLeft + 2, 34), 60);
 
         for (int i = 0; i < uncheckedLines.size(); i += 2) {
             String left = uncheckedLines.get(i);
