@@ -148,11 +148,13 @@ public class ThyroidEntry implements Serializable {
     private Double tsh;
     private Double freeT4;
     private Double freeT3;
+    private Double totalT3;
     private Double tpoAb;
     private Double tg;
     private Double tgAb;
     private Double trab;
     private Double calcitonin;
+    private Double reverseT3;
     private LocalDate lastLabDate;
 
     // Treatment
@@ -213,11 +215,13 @@ public class ThyroidEntry implements Serializable {
         this.tsh = builder.tsh;
         this.freeT4 = builder.freeT4;
         this.freeT3 = builder.freeT3;
+        this.totalT3 = builder.totalT3;
         this.tpoAb = builder.tpoAb;
         this.tg = builder.tg;
         this.tgAb = builder.tgAb;
         this.trab = builder.trab;
         this.calcitonin = builder.calcitonin;
+        this.reverseT3 = builder.reverseT3;
         this.lastLabDate = builder.lastLabDate;
         this.lt4DoseMcgPerDay = builder.lt4DoseMcgPerDay;
         this.atdName = builder.atdName;
@@ -322,6 +326,9 @@ public class ThyroidEntry implements Serializable {
     public Double getFreeT3() { return freeT3; }
     public void setFreeT3(Double freeT3) { this.freeT3 = freeT3; }
 
+    public Double getTotalT3() { return totalT3; }
+    public void setTotalT3(Double totalT3) { this.totalT3 = totalT3; }
+
     public Double getTpoAb() { return tpoAb; }
     public void setTpoAb(Double tpoAb) { this.tpoAb = tpoAb; }
 
@@ -336,6 +343,9 @@ public class ThyroidEntry implements Serializable {
 
     public Double getCalcitonin() { return calcitonin; }
     public void setCalcitonin(Double calcitonin) { this.calcitonin = calcitonin; }
+
+    public Double getReverseT3() { return reverseT3; }
+    public void setReverseT3(Double reverseT3) { this.reverseT3 = reverseT3; }
 
     public LocalDate getLastLabDate() { return lastLabDate; }
     public void setLastLabDate(LocalDate lastLabDate) { this.lastLabDate = lastLabDate; }
@@ -477,11 +487,13 @@ public class ThyroidEntry implements Serializable {
         private Double tsh;
         private Double freeT4;
         private Double freeT3;
+        private Double totalT3;
         private Double tpoAb;
         private Double tg;
         private Double tgAb;
         private Double trab;
         private Double calcitonin;
+        private Double reverseT3;
         private LocalDate lastLabDate;
         private Double lt4DoseMcgPerDay;
         private String atdName;
@@ -654,6 +666,11 @@ public class ThyroidEntry implements Serializable {
             return this;
         }
 
+        public Builder totalT3(Double totalT3) {
+            this.totalT3 = totalT3;
+            return this;
+        }
+
         public Builder tpoAb(Double tpoAb) {
             this.tpoAb = tpoAb;
             return this;
@@ -676,6 +693,11 @@ public class ThyroidEntry implements Serializable {
 
         public Builder calcitonin(Double calcitonin) {
             this.calcitonin = calcitonin;
+            return this;
+        }
+
+        public Builder reverseT3(Double reverseT3) {
+            this.reverseT3 = reverseT3;
             return this;
         }
 

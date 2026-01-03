@@ -30,6 +30,17 @@ import javafx.stage.Stage;
  */
 public class ThyroidPane extends VBox {
 
+    private static final String TSH_REF = "0.25-5 mIU/L";
+    private static final String FT4_REF = "10.6-19.4 ng/L";
+    private static final String FT3_REF = "2.00-4.40 pg/mL";
+    private static final String T3_REF = "0.9-2.5 ng/ml";
+    private static final String TPOAB_REF = "≤34.0 IU/mL";
+    private static final String TG_REF = "3.50-77.00 ng/mL";
+    private static final String TGAB_REF = "≤115.0 IU/mL";
+    private static final String TRAB_REF = "<1.75 IU/L";
+    private static final String CALCITONIN_REF = "M:≤18.2, F:≤11.5 pg/mL";
+    private static final String REVT3_REF = "90-350 pg/mL";
+
     private static final Map<String, List<ThyroidEntry.Symptom>> SYMPTOM_GROUPS = buildSymptomGroups();
     private static final String[][] EXAM_SECTIONS = {
             {"Goiter Ruled", "Goiter ruled out", "Goiter ruled in Diffuse Enlargement",
@@ -112,11 +123,13 @@ public class ThyroidPane extends VBox {
     private final TextField txtTsh = new TextField();
     private final TextField txtFreeT4 = new TextField();
     private final TextField txtFreeT3 = new TextField();
+    private final TextField txtTotalT3 = new TextField();
     private final TextField txtTpoAb = new TextField();
     private final TextField txtTg = new TextField();
     private final TextField txtTgAb = new TextField();
     private final TextField txtTrab = new TextField();
     private final TextField txtCalcitonin = new TextField();
+    private final TextField txtReverseT3 = new TextField();
     private final DatePicker dpLastLabDate = new DatePicker();
 
     // Treatment
@@ -211,14 +224,16 @@ public class ThyroidPane extends VBox {
         lblTiRadsResult.setStyle("-fx-font-weight: bold; -fx-text-fill: #8e44ad;");
 
         // Labs
-        txtTsh.setPromptText("TSH (uIU/mL)");
-        txtFreeT4.setPromptText("fT4 (ng/dL)");
-        txtFreeT3.setPromptText("fT3 (pg/mL)");
-        txtTpoAb.setPromptText("TPOAb (IU/mL)");
-        txtTg.setPromptText("Tg (ng/mL)");
-        txtTgAb.setPromptText("TgAb (IU/mL)");
-        txtTrab.setPromptText("TRAb (IU/L)");
-        txtCalcitonin.setPromptText("Calcitonin (pg/mL)");
+        txtTsh.setPromptText("TSH (0.25-5 mIU/L)");
+        txtFreeT4.setPromptText("fT4 (10.6-19.4 ng/L)");
+        txtFreeT3.setPromptText("fT3 (2.00-4.40 pg/mL)");
+        txtTotalT3.setPromptText("T3 (0.9-2.5 ng/mL)");
+        txtTpoAb.setPromptText("TPOAb (≤34.0 IU/mL)");
+        txtTg.setPromptText("Tg (3.50-77.00 ng/mL)");
+        txtTgAb.setPromptText("TgAb (≤115.0 IU/mL)");
+        txtTrab.setPromptText("TRAb (<1.75 IU/L)");
+        txtCalcitonin.setPromptText("Calcitonin (M:≤18.2, F:≤11.5 pg/mL)");
+        txtReverseT3.setPromptText("revT3 (90-350 pg/mL)");
         dpLastLabDate.setPromptText("Date");
 
         // Treatment
@@ -440,16 +455,19 @@ public class ThyroidPane extends VBox {
 
         grid.addRow(0,
                 new Label("TSH (uIU/mL)"), txtTsh,
-                new Label("fT4 (ng/dL)"), txtFreeT4,
-                new Label("fT3 (pg/mL)"), txtFreeT3);
+                new Label("fT4 (ng/dL)"), txtFreeT4);
         grid.addRow(1,
+                new Label("fT3 (pg/mL)"), txtFreeT3,
+                new Label("T3 (ng/mL)"), txtTotalT3);
+        grid.addRow(2,
                 new Label("TPOAb (IU/mL)"), txtTpoAb,
                 new Label("Tg (ng/mL)"), txtTg,
                 new Label("TgAb (IU/mL)"), txtTgAb);
-        grid.addRow(2,
+        grid.addRow(3,
                 new Label("TRAb (IU/L)"), txtTrab,
-                new Label("Calcitonin (pg/mL)"), txtCalcitonin);
-        grid.addRow(3, new Label("Date"), dpLastLabDate);
+                new Label("Calcitonin (pg/mL)"), txtCalcitonin,
+                new Label("revT3 (pg/mL)"), txtReverseT3);
+        grid.addRow(4, new Label("Date"), dpLastLabDate);
 
         return styledPane("5. Labs", grid);
     }
@@ -674,11 +692,13 @@ public class ThyroidPane extends VBox {
         entry.setTsh(parseDoubleOrNull(txtTsh.getText()));
         entry.setFreeT4(parseDoubleOrNull(txtFreeT4.getText()));
         entry.setFreeT3(parseDoubleOrNull(txtFreeT3.getText()));
+        entry.setTotalT3(parseDoubleOrNull(txtTotalT3.getText()));
         entry.setTpoAb(parseDoubleOrNull(txtTpoAb.getText()));
         entry.setTg(parseDoubleOrNull(txtTg.getText()));
         entry.setTgAb(parseDoubleOrNull(txtTgAb.getText()));
         entry.setTrab(parseDoubleOrNull(txtTrab.getText()));
         entry.setCalcitonin(parseDoubleOrNull(txtCalcitonin.getText()));
+        entry.setReverseT3(parseDoubleOrNull(txtReverseT3.getText()));
         entry.setLastLabDate(dpLastLabDate.getValue());
 
         // Meds
@@ -695,6 +715,53 @@ public class ThyroidPane extends VBox {
         // Physical Exam
         entry.setGoiterSize(emptyToNull(txtGoiterSize.getText()));
         entry.setPhysicalExamNote(txtPhysicalExamNote.getText());
+    }
+
+    private void addLabLine(List<String> lines, String name, Double value, String ref) {
+        if (value == null) return;
+        String indicator = getLabIndicator(value, ref);
+        lines.add(String.format("          %-15s\t%-10.2f\t%-2s\t(%s)", name, value, indicator, ref));
+    }
+
+    private String getLabIndicator(Double value, String ref) {
+        if (value == null || ref == null) return "";
+
+        // Special handling for complex cases like Calcitonin
+        if (ref.contains("M:") || ref.contains("F:")) {
+            return "";
+        }
+
+        String[] parts = ref.split(" ");
+        if (parts.length == 0) return "";
+        String numericRef = parts[0];
+
+        if (numericRef.contains("-")) {
+            String[] rangeParts = numericRef.split("-");
+            if(rangeParts.length < 2) return "";
+            try {
+                double low = Double.parseDouble(rangeParts[0]);
+                double high = Double.parseDouble(rangeParts[1]);
+                if (value < low) return "▽";
+                if (value > high) return "▲";
+            } catch (NumberFormatException e) {
+                return ""; // Or log error
+            }
+        } else if (numericRef.startsWith("≤")) {
+            try {
+                double high = Double.parseDouble(numericRef.substring(1));
+                if (value > high) return "▲";
+            } catch (NumberFormatException e) {
+                return "";
+            }
+        } else if (numericRef.startsWith("<")) {
+            try {
+                double high = Double.parseDouble(numericRef.substring(1));
+                if (value >= high) return "▲";
+            } catch (NumberFormatException e) {
+                return "";
+            }
+        }
+        return "";
     }
 
     private String buildSpecialistSummary(ThyroidEntry e) {
@@ -716,6 +783,21 @@ public class ThyroidPane extends VBox {
             lines.add("     | Conditions checklist:");
             for (var entryGroup : selectedConditions.entrySet()) {
                 lines.add("     |   " + entryGroup.getKey() + ": " + String.join("; ", entryGroup.getValue()));
+            }
+        }
+
+        if (e.getGoiterSize() != null && !e.getGoiterSize().isBlank()) {
+            String goiterSize = e.getGoiterSize();
+            if (!goiterSize.toLowerCase().contains("cc")) { // If it doesn't contain "cc", process for main summary
+                if (!goiterSize.toLowerCase().contains("cm")) { // If no "cm" or "cc"
+                    try {
+                        Double.parseDouble(goiterSize); // Check if it's a number
+                        goiterSize += " CC"; // If so, append " CC"
+                    } catch (NumberFormatException ex) {
+                        // Not a number, leave as is (e.g., "nodular")
+                    }
+                }
+                lines.add("     | Physical Exam: Goiter size " + goiterSize);
             }
         }
         String negatives = (e.getSymptomNegatives() != null) ? e.getSymptomNegatives().trim() : "";
@@ -776,18 +858,22 @@ public class ThyroidPane extends VBox {
             }
         }
 
-        List<String> labs = new ArrayList<>();
-        if (e.getTsh() != null) labs.add("TSH " + e.getTsh() + " uIU/mL");
-        if (e.getFreeT4() != null) labs.add("fT4 " + e.getFreeT4() + " ng/dL");
-        if (e.getFreeT3() != null) labs.add("fT3 " + e.getFreeT3() + " pg/mL");
-        if (e.getTpoAb() != null) labs.add("TPOAb " + e.getTpoAb() + " IU/mL");
-        if (e.getTg() != null) labs.add("Tg " + e.getTg() + " ng/mL");
-        if (e.getTgAb() != null) labs.add("TgAb " + e.getTgAb() + " IU/mL");
-        if (e.getTrab() != null) labs.add("TRAb " + e.getTrab() + " IU/L");
-        if (e.getCalcitonin() != null) labs.add("Calcitonin " + e.getCalcitonin() + " pg/mL");
-        if (!labs.isEmpty()) {
+        List<String> labLines = new ArrayList<>();
+        addLabLine(labLines, "TSH", e.getTsh(), TSH_REF);
+        addLabLine(labLines, "fT4", e.getFreeT4(), FT4_REF);
+        addLabLine(labLines, "fT3", e.getFreeT3(), FT3_REF);
+        addLabLine(labLines, "T3", e.getTotalT3(), T3_REF);
+        addLabLine(labLines, "TPOAb", e.getTpoAb(), TPOAB_REF);
+        addLabLine(labLines, "Tg", e.getTg(), TG_REF);
+        addLabLine(labLines, "TgAb", e.getTgAb(), TGAB_REF);
+        addLabLine(labLines, "TRAb", e.getTrab(), TRAB_REF);
+        addLabLine(labLines, "Calcitonin", e.getCalcitonin(), CALCITONIN_REF);
+        addLabLine(labLines, "revT3", e.getReverseT3(), REVT3_REF);
+
+        if (!labLines.isEmpty()) {
             String datePart = (e.getLastLabDate() != null) ? " (" + e.getLastLabDate() + ")" : "";
-            lines.add("     | Labs" + datePart + ": " + String.join("; ", labs));
+            lines.add("     | Labs" + datePart + ":");
+            lines.addAll(labLines);
         }
 
         if (lblTiRadsResult.getText().contains("Score")) {
@@ -848,8 +934,8 @@ public class ThyroidPane extends VBox {
         if (anySelected || hasExtra) {
             lines.add(EXAM_SEPARATOR);
             lines.add(EXAM_HEADER);
-            if (!gSize.isEmpty()) {
-                lines.add("     Goiter Size: [ " + gSize + " ] cc");
+            if (!gSize.isEmpty() && gSize.toLowerCase().contains("cc")) {
+                lines.add("     Goiter Size : " + gSize);
             }
             for (var entry : examSectionMap.entrySet()) {
                 List<String> selected = entry.getValue().stream()
