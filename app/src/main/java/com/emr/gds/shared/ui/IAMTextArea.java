@@ -25,6 +25,8 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.FontPosture;
 
 /**
  * Manages the central text areas in the EMR application, providing features like:
@@ -249,7 +251,7 @@ public class IAMTextArea {
     private TextArea createStyledTextArea(int index) {
         TextArea ta = new TextArea();
         ta.setWrapText(true);
-        ta.setFont(Font.font("Malgun Gothic", 12));
+        ta.setFont(Font.font("Consolas", FontWeight.BOLD, FontPosture.ITALIC, 12));
         ta.setPrefRowCount(11);
         ta.setPrefColumnCount(58);
         ta.setPromptText(index < TEXT_AREA_TITLES.length ? TEXT_AREA_TITLES[index] : "Area " + (index + 1));

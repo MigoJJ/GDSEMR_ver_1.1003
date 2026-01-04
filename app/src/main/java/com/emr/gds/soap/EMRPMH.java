@@ -1,14 +1,9 @@
 package com.emr.gds.soap;
 
-import com.emr.gds.input.IAITextAreaManager;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Comparator;
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -17,7 +12,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.nio.charset.StandardCharsets;
+
+import com.emr.gds.input.IAITextAreaManager;
+
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -41,6 +38,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.FontPosture;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -106,6 +105,15 @@ public class EMRPMH extends Application {
     // UPGRADE: Define how many columns the grid should have
     private static final int NUM_COLUMNS = 4; // Increased columns: 3 -> 4
 
+    // UPGRADE: Centralized configuration for TextArea heights
+    private static final Map<String, Integer> TEXT_AREA_HEIGHTS = new LinkedHashMap<>();
+    static {
+        for (String category : CATEGORIES) {
+            TEXT_AREA_HEIGHTS.put(category, 2);
+        }
+        TEXT_AREA_HEIGHTS.put("outputArea", 3);
+    }
+
     // -------- Constructors --------
     public EMRPMH() { this(null, null, Collections.emptyMap()); }
     public EMRPMH(IAITextAreaManager manager) { this(manager, null, Collections.emptyMap()); }
@@ -141,7 +149,7 @@ public class EMRPMH extends Application {
         root.getStyleClass().add("pmh-root");
 
         Label title = new Label("Past Medical History");
-        title.setFont(Font.font("Segoe UI", 17)); // Slightly increased: 15 -> 17
+        title.setFont(Font.font("Consolas", FontWeight.BOLD, FontPosture.ITALIC, 17)); // Slightly increased: 15 -> 17
         title.setPadding(new Insets(0, 0, 15, 0));
         title.getStyleClass().add("pmh-title");
         root.setTop(title);
@@ -163,15 +171,15 @@ public class EMRPMH extends Application {
         int row = 0, col = 0;
         for (String key : CATEGORIES) {
             CheckBox cb = new CheckBox(key);
-            cb.setFont(Font.font("Segoe UI", 11)); // Slightly increased: 9 -> 11
+            cb.setFont(Font.font("Consolas", FontWeight.BOLD, FontPosture.ITALIC, 11)); // Slightly increased: 9 -> 11
             cb.setTooltip(new Tooltip("Select if applicable: " + key));
             pmhChecks.put(key, cb);
 
             TextArea ta = new TextArea();
             ta.setPromptText("Details for " + key);
             ta.setWrapText(true);
-            ta.setPrefRowCount(2); // Increased row count for better visibility
-            ta.setFont(Font.font("Segoe UI", 11)); // Slightly increased: 9 -> 11
+            ta.setPrefRowCount(TEXT_AREA_HEIGHTS.getOrDefault(key, 2));
+            ta.setFont(Font.font("Consolas", FontWeight.BOLD, FontPosture.ITALIC, 11)); // Slightly increased: 9 -> 11
             pmhNotes.put(key, ta);
             
             // This VBox keeps the checkbox and its text area together vertically
@@ -200,13 +208,21 @@ public class EMRPMH extends Application {
 
         // Output / status area
         outputArea = new TextArea();
-        outputArea.setEditable(false);
-        outputArea.setPrefRowCount(8); // Increased rows
+        outputArea.setEditable(true);
+        outputArea.setPrefRowCount(TEXT_AREA_HEIGHTS.getOrDefault("outputArea", 8));
         outputArea.setWrapText(false); // Keep columns aligned
-        outputArea.setFont(Font.font("Consolas", 12)); // Slightly increased for visibility
+        outputArea.setFont(Font.font("Consolas", FontWeight.BOLD, FontPosture.ITALIC, 11)); // Slightly increased for visibility
         outputArea.setPromptText("Live summary of selected PMH will appear here.");
         outputArea.getStyleClass().add("pmh-output");
-        root.setBottom(buildFooter(outputArea));
+        root.setBottom(buildFooter());
+
+        VBox rightPanel = new VBox(outputArea);
+        rightPanel.setPadding(new Insets(10));
+        rightPanel.setSpacing(10);
+        VBox.setVgrow(outputArea, Priority.ALWAYS); // Allow outputArea to grow vertically
+        outputArea.setPrefWidth(300); // Set a preferred width for the side panel
+        outputArea.setWrapText(true); // Enable wrapping for the side panel
+        root.setRight(rightPanel);
 
         Scene scene = new Scene(root, 1200, 1000); // Increased default size
         scene.setOnKeyPressed(e -> {
@@ -220,7 +236,7 @@ public class EMRPMH extends Application {
         updateLiveSummary(); // Initial state
     }
 
-    private VBox buildFooter(TextArea output) {
+    private VBox buildFooter() {
         Button btnSave = new Button("Save (Ctrl+Enter)");
         Button btnDefault = new Button("Default");
         Button btnClear = new Button("Clear");
@@ -229,7 +245,7 @@ public class EMRPMH extends Application {
         Button btnQuit = new Button("Quit");
 
         List.of(btnSave, btnDefault, btnClear, btnCopy, btnFMH, btnQuit).forEach(btn -> {
-            btn.setFont(Font.font("Segoe UI", 11)); // Slightly increased: 9 -> 11
+            btn.setFont(Font.font("Consolas", FontWeight.BOLD, FontPosture.ITALIC, 11)); // Slightly increased: 9 -> 11
             btn.getStyleClass().add("pmh-btn");
         });
         
@@ -259,15 +275,13 @@ public class EMRPMH extends Application {
         buttons.setAlignment(Pos.CENTER_RIGHT);
         buttons.setPadding(new Insets(10, 0, 0, 0));
 
-        return new VBox(8, new Separator(), output, buttons);
+        return new VBox(8, new Separator(), buttons);
     }
 
     private String buildThemeCss() {
         // High-visibility Clinical Theme with Van Gogh Inspired Highlights
         return """
-                .pmh-root {
-                    -fx-background-color: #f4f6f9; /* Clinical Light Gray */
-                    -fx-font-family: 'Segoe UI', sans-serif;
+                -fx-font-family: 'Consolas', sans-serif;
                 }
                 .pmh-title {
                     -fx-text-fill: #1a1a1a;
@@ -300,7 +314,7 @@ public class EMRPMH extends Application {
                     -fx-font-weight: bold;
                 }
                 .text-area {
-                    -fx-font-family: 'Segoe UI', sans-serif;
+                    -fx-font-family: 'Consolas', sans-serif;
                     -fx-font-size: 11px;
                     -fx-text-fill: #000000;
                     -fx-background-color: white;

@@ -19,7 +19,7 @@ public class AllergyApp extends Application {
         // A basic default stylesheet
         // Gogh-inspired palette: sunflower yellows with deep cobalt accents.
         String defaultCSS = """
-                .root { -fx-font-family: 'Segoe UI', sans-serif; }
+                .root { -fx-font-family: 'Consolas', sans-serif; }
                 .button {
                     -fx-background-radius: 6;
                     -fx-background-color: linear-gradient(to bottom, #ffcf56, #f4a300);

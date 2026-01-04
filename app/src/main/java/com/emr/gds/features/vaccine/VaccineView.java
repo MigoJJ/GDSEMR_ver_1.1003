@@ -10,6 +10,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.text.FontPosture;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -23,8 +24,8 @@ public class VaccineView {
 
     private static final double FRAME_WIDTH = 500;
     private static final double FRAME_HEIGHT = 900;
-    private static final Font LABEL_FONT = Font.font("Malgun Gothic", FontWeight.BOLD, 14);
-    private static final Font BUTTON_FONT = Font.font("Malgun Gothic", FontWeight.NORMAL, 12);
+    private static final Font LABEL_FONT = Font.font("Consolas", FontWeight.BOLD, FontPosture.ITALIC, 14);
+    private static final Font BUTTON_FONT = Font.font("Consolas", FontWeight.BOLD, FontPosture.ITALIC, 12);
     private static final String HEADER_STYLE = "-fx-background-color: #DCE6F0; -fx-padding: 6 0 6 0;";
     private static final String VACCINE_BUTTON_STYLE = "-fx-background-color: #FFFFFF;";
     private static final String SIDEEFFECT_BUTTON_STYLE = "-fx-background-color: #FFFBE1;";

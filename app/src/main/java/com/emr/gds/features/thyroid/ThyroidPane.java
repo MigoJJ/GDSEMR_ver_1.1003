@@ -256,7 +256,7 @@ public class ThyroidPane extends VBox {
                 "-fx-control-inner-background: #fff5cc;" +
                 "-fx-border-color: #d35400;" +
                 "-fx-border-width: 2;" +
-                "-fx-font-family: \"Consolas\";" +
+                "-fx-font-family: 'Consolas';" +
                 "-fx-font-size: 12px;"
         );
     }

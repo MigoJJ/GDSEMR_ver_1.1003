@@ -31,6 +31,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.text.FontPosture;
 import javafx.stage.Stage;
 
 /**
@@ -76,13 +77,13 @@ public class DexaRiskAssessmentApp extends Application {
     private void initComponents() {
         scoreField = new TextField();
         scoreField.setPrefWidth(120);
-        scoreField.setFont(Font.font("System", FontWeight.BOLD, 15));
+        scoreField.setFont(Font.font("Consolas", FontWeight.BOLD, FontPosture.ITALIC, 15));
         scoreField.setStyle("-fx-alignment: CENTER; -fx-background-color: #f0f8ff;");
         scoreField.setOnAction(e -> ageField.requestFocus());
 
         ageField = new TextField();
         ageField.setPrefWidth(120);
-        ageField.setFont(Font.font("System", FontWeight.BOLD, 15));
+        ageField.setFont(Font.font("Consolas", FontWeight.BOLD, FontPosture.ITALIC, 15));
         ageField.setStyle("-fx-alignment: CENTER; -fx-background-color: #f0f8ff;");
 
         genderComboBox = new ComboBox<>();
