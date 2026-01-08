@@ -12,6 +12,7 @@ dependencies {
 
     implementation("org.xerial:sqlite-jdbc:$sqliteVersion")
     runtimeOnly("org.slf4j:slf4j-simple:$slf4jVersion")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1") // Added for JSON parsing
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
