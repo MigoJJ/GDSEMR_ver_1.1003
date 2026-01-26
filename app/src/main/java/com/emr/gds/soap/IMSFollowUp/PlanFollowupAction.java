@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -42,6 +43,7 @@ public class PlanFollowupAction {
             "1w", "2w", "4w", "1d", "3d", "7d", "1m", "3m", "6m", ":cd",
             "5", "55", "6", "8", "2", "4", "0", "1"
     };
+    private static final Pattern MEDS_CODE_LINE = Pattern.compile("^(-\\s*)?(5|55|6|8|2|4|0|1)$");
 
     public PlanFollowupAction(IAITextAreaManager textAreaManager,
                               IAMProblemAction problemAction,
@@ -90,18 +92,9 @@ public class PlanFollowupAction {
         editorTextArea.setWrapText(true);
         editorTextArea.setPrefRowCount(10);
 
-        TextArea previewArea = new TextArea();
-        previewArea.setEditable(false);
-        previewArea.setWrapText(true);
-        previewArea.setPrefRowCount(4);
-        previewArea.setStyle("-fx-background-color: #f5f5f5;");
-
-        editorTextArea.textProperty().addListener((obs, old, val) -> previewArea.setText(expandAbbreviations(val)));
-
         return new VBox(10,
                 createQuickPlanPanel(),
-                new Label("Plan Text:"), editorTextArea,
-                new Label("Preview:"), previewArea
+                new Label("Plan Text:"), editorTextArea
         );
     }
 
@@ -187,13 +180,25 @@ public class PlanFollowupAction {
     }
 
     private String expandAbbreviations(String text) {
-        return Arrays.stream(text.split("((?<= )|(?= ))"))
+        return Arrays.stream(text.split("\\R", -1))
+                .map(this::expandLine)
+                .collect(Collectors.joining("\n"));
+    }
+
+    private String expandLine(String line) {
+        String trimmed = line.trim();
+        if (MEDS_CODE_LINE.matcher(trimmed).matches()) {
+            String prefix = trimmed.startsWith("-") ? "- " : "";
+            String code = trimmed.replaceFirst("^-\\s*", "");
+            return prefix + parseMedsCode(code);
+        }
+        return Arrays.stream(line.split("((?<=\\s)|(?=\\s))"))
                 .map(word -> {
                     String clean = word.trim();
+                    if (clean.isEmpty()) return word;
                     if (":cd".equals(clean)) return LocalDate.now().format(DateTimeFormatter.ISO_DATE);
                     if (clean.startsWith(":")) return abbrevMap.getOrDefault(clean.substring(1), word);
                     if (clean.matches("[0-9]+[wdm]")) return parseFU(clean);
-                    if (Arrays.asList("5", "55", "6", "8", "2", "4", "0", "1").contains(clean)) return parseMedsCode(clean);
                     return word;
                 })
                 .collect(Collectors.joining());

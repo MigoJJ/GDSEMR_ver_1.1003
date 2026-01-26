@@ -30,6 +30,12 @@ public class IAIFxTextAreaManager implements IAITextAreaManager {
             Objects.requireNonNull(textAreas.get(i), "TextArea at index " + i + " cannot be null.");
         }
         this.textAreas = textAreas;
+        for (int i = 0; i < areaCount(); i++) {
+            final int index = i;
+            textAreas.get(i).focusedProperty().addListener((obs, was, is) -> {
+                if (is) focusedIndex = index;
+            });
+        }
     }
 
     @Override
@@ -44,7 +50,7 @@ public class IAIFxTextAreaManager implements IAITextAreaManager {
         if (line == null || line.isEmpty()) return;
         final String textToInsert = ensureTrailingNewline(normalizeNewlines(line));
         runOnFxThread(() -> {
-            TextArea focusedArea = textAreas.get(focusedIndex);
+            TextArea focusedArea = getFocusedArea();
             focusedArea.insertText(focusedArea.getCaretPosition(), textToInsert);
         });
     }
@@ -54,7 +60,7 @@ public class IAIFxTextAreaManager implements IAITextAreaManager {
         if (block == null || block.isEmpty()) return;
         final String textToInsert = normalizeNewlines(block);
         runOnFxThread(() -> {
-            TextArea focusedArea = textAreas.get(focusedIndex);
+            TextArea focusedArea = getFocusedArea();
             focusedArea.insertText(focusedArea.getCaretPosition(), textToInsert);
         });
     }
@@ -98,5 +104,12 @@ public class IAIFxTextAreaManager implements IAITextAreaManager {
      */
     private static String ensureTrailingNewline(String s) {
         return s.endsWith("\n") ? s : s + "\n";
+    }
+
+    private TextArea getFocusedArea() {
+        for (TextArea ta : textAreas) {
+            if (ta.isFocused()) return ta;
+        }
+        return textAreas.get(focusedIndex);
     }
 }
