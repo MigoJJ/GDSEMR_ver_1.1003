@@ -3,6 +3,8 @@ package com.emr.gds.repository.sqlite;
 import com.emr.gds.core.db.AppDatabaseManager;
 import com.emr.gds.features.ReferenceFile.ReferenceItem;
 import com.emr.gds.repository.ReferenceRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -11,6 +13,7 @@ import java.util.Optional;
 
 public class SqliteReferenceRepository implements ReferenceRepository {
 
+    private static final Logger logger = LoggerFactory.getLogger(SqliteReferenceRepository.class);
     private final AppDatabaseManager dbManager;
     private static final String DB_FILE_NAME = "references.db";
 
@@ -35,9 +38,10 @@ public class SqliteReferenceRepository implements ReferenceRepository {
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
             stmt.execute(sql);
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_references_category ON \"references\" (category)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_references_contents ON \"references\" (contents)");
         } catch (SQLException e) {
-            System.err.println("Error creating references table: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error creating references table: {}", e.getMessage(), e);
         }
     }
 
@@ -70,8 +74,7 @@ public class SqliteReferenceRepository implements ReferenceRepository {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Error saving reference item: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error saving reference item: {}", e.getMessage(), e);
         }
         return item;
     }
@@ -79,7 +82,7 @@ public class SqliteReferenceRepository implements ReferenceRepository {
     @Override
     public void delete(ReferenceItem item) {
         if (item.getId() == 0) {
-            System.err.println("Cannot delete reference item without an ID.");
+            logger.warn("Cannot delete reference item without an ID.");
             return;
         }
         String sql = "DELETE FROM \"references\" WHERE id = ?";
@@ -88,8 +91,7 @@ public class SqliteReferenceRepository implements ReferenceRepository {
             pstmt.setInt(1, item.getId());
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            System.err.println("Error deleting reference item: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error deleting reference item: {}", e.getMessage(), e);
         }
     }
 
@@ -109,8 +111,7 @@ public class SqliteReferenceRepository implements ReferenceRepository {
                 ));
             }
         } catch (SQLException e) {
-            System.err.println("Error finding all reference items: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error finding all reference items: {}", e.getMessage(), e);
         }
         return items;
     }
@@ -132,9 +133,106 @@ public class SqliteReferenceRepository implements ReferenceRepository {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Error finding reference item by ID: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error finding reference item by ID: {}", e.getMessage(), e);
         }
         return Optional.empty();
+    }
+
+    @Override
+    public Optional<ReferenceItem> findByCategoryAndContents(String category, String contents) {
+        String sql = "SELECT id, category, contents, directory_path FROM \"references\" WHERE category = ? AND contents = ? LIMIT 1";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, category);
+            pstmt.setString(2, contents);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(new ReferenceItem(
+                        rs.getInt("id"),
+                        rs.getString("category"),
+                        rs.getString("contents"),
+                        rs.getString("directory_path")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Error finding reference item by category and contents: {}", e.getMessage(), e);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public boolean existsByCategoryAndContents(String category, String contents, int excludeId) {
+        String sql = "SELECT COUNT(1) FROM \"references\" WHERE category = ? AND contents = ? AND id <> ?";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, category);
+            pstmt.setString(2, contents);
+            pstmt.setInt(3, excludeId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Error checking duplicate references: {}", e.getMessage(), e);
+        }
+        return false;
+    }
+
+    @Override
+    public List<String> findDistinctCategories() {
+        List<String> categories = new ArrayList<>();
+        String sql = "SELECT DISTINCT category FROM \"references\" ORDER BY category";
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                String category = rs.getString("category");
+                if (category != null && !category.isEmpty()) {
+                    categories.add(category);
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Error finding distinct categories: {}", e.getMessage(), e);
+        }
+        return categories;
+    }
+
+    @Override
+    public List<ReferenceItem> search(String query, String category) {
+        List<ReferenceItem> items = new ArrayList<>();
+        String normalizedQuery = query == null ? "" : query.trim().toLowerCase();
+        String normalizedCategory = category == null ? "" : category.trim();
+        String sql = """
+            SELECT id, category, contents, directory_path
+            FROM "references"
+            WHERE (? = '' OR LOWER(category) LIKE ? OR LOWER(contents) LIKE ? OR LOWER(directory_path) LIKE ?)
+              AND (? = '' OR category = ?)
+            ORDER BY category
+            """;
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            String likeQuery = "%" + normalizedQuery + "%";
+            pstmt.setString(1, normalizedQuery);
+            pstmt.setString(2, likeQuery);
+            pstmt.setString(3, likeQuery);
+            pstmt.setString(4, likeQuery);
+            pstmt.setString(5, normalizedCategory);
+            pstmt.setString(6, normalizedCategory);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    items.add(new ReferenceItem(
+                        rs.getInt("id"),
+                        rs.getString("category"),
+                        rs.getString("contents"),
+                        rs.getString("directory_path")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Error searching reference items: {}", e.getMessage(), e);
+        }
+        return items;
     }
 }
