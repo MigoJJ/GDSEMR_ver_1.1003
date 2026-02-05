@@ -514,8 +514,11 @@ public class IAMTextArea {
         }
     }
 
+    public List<TextArea> getInternalTextAreas() {
+        return this.areas;
+    }
+
     public List<TextArea> getTextAreas() {
-        IAIMain.setTextAreaManager(new IAIFxTextAreaManager(areas));
         return Collections.unmodifiableList(this.areas);
     }
 

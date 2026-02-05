@@ -82,6 +82,13 @@ public class ClinicalLabController implements Initializable {
                 clearDetails();
             }
         });
+
+        // Handle double-click on table rows
+        labTable.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                addToSelection();
+            }
+        });
     }
 
     @FXML

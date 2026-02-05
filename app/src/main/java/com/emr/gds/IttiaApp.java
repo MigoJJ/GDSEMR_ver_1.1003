@@ -4,9 +4,11 @@ import com.emr.gds.core.db.AppDatabaseManager;
 import com.emr.gds.repository.sqlite.SqliteAbbreviationRepository;
 import com.emr.gds.repository.sqlite.SqlitePlanHistoryRepository;
 import com.emr.gds.repository.sqlite.SqliteProblemRepository;
+import com.emr.gds.repository.sqlite.SqliteReferenceRepository; // New import
 import com.emr.gds.service.AbbreviationService;
 import com.emr.gds.service.PlanHistoryService;
 import com.emr.gds.service.ProblemListService;
+import com.emr.gds.service.ReferenceService; // New import
 import com.emr.gds.features.imaging.ChestXrayReviewStage;
 import com.emr.gds.features.ekg.EkgReportStage;
 import com.emr.gds.features.ekg.EkgSimpleReportApp;
@@ -48,9 +50,11 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.fxml.FXMLLoader;
 
 import com.emr.gds.features.medication.MedicationCategory;
 import com.emr.gds.features.thyroid.ThyroidLauncher;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -437,6 +441,13 @@ public class IttiaApp extends Application {
             bottomBar.getItems().add(allergyButton);
             bottomBar.getItems().add(new Separator());
             bottomBar.getItems().add(labCodeButton);
+            bottomBar.getItems().add(new Separator());
+
+            Button referenceButton = new Button("Reference");
+            referenceButton.getStyleClass().add("button-accent");
+            referenceButton.setOnAction(e -> openReferenceManager());
+
+            bottomBar.getItems().add(referenceButton);
             
             return bottomBar;
         } catch (Exception e) {
@@ -482,6 +493,35 @@ public class IttiaApp extends Application {
         );
     }
 
+    /**
+     * Opens the Reference Manager window.
+     */
+    private void openReferenceManager() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/reference_frame.fxml"));
+            Stage referenceStage = new Stage();
+            referenceStage.setTitle("Reference Manager");
+            referenceStage.setScene(new Scene(loader.load()));
+            
+            // Get the controller and inject the base path and service
+            com.emr.gds.features.ReferenceFile.ReferenceController controller = loader.getController();
+            File referenceBasePath = getRepoRoot().resolve("app").resolve("db").resolve("references").toFile();
+            controller.setBasePath(referenceBasePath);
+            
+            // Instantiate and inject ReferenceService
+            SqliteReferenceRepository referenceRepository = new SqliteReferenceRepository(AppDatabaseManager.getInstance());
+            ReferenceService referenceService = new ReferenceService(referenceRepository);
+            controller.setReferenceService(referenceService);
+            
+            controller.initData();
+
+            referenceStage.setResizable(false);
+            referenceStage.show();
+        } catch (IOException e) {
+            showFatalError("Reference Manager Error", "Failed to open Reference Manager.", e);
+        }
+    }
+
     // ================================
     // Post-Initialization Setup
     // ================================
@@ -507,7 +547,7 @@ public class IttiaApp extends Application {
      * to interact with the JavaFX text areas.
      */
     private void establishBridgeConnection() {
-        var areas = textAreaManager.getTextAreas();
+        var areas = textAreaManager.getInternalTextAreas();
         if (areas == null || areas.isEmpty()) {
             throw new IllegalStateException("EMR text areas not initialized. buildCenterAreas() must run first.");
         }
