@@ -13,6 +13,7 @@ import com.emr.gds.features.imaging.ChestXrayReviewStage;
 import com.emr.gds.features.ekg.EkgReportStage;
 import com.emr.gds.features.ekg.EkgSimpleReportApp;
 import com.emr.gds.features.ekg.EkgQuickInterpreter;
+import com.emr.gds.features.gout.GoutApp;
 import com.emr.gds.features.allergy.AllergyApp;
 import com.emr.gds.features.bone.DexaRiskAssessmentApp;
 import com.emr.gds.input.IAIFreqFrame;
@@ -354,6 +355,12 @@ public class IttiaApp extends Application {
             chestPAWindow.show();
         });
 
+        Button goutButton = new Button("Gout");
+        goutButton.getStyleClass().add("button-accent");
+        goutButton.setOnAction(e -> {
+            new GoutApp().start(new Stage());
+        });
+
         Button categoryButton = new Button("Category");
         categoryButton.setOnAction(e -> {
             try {
@@ -370,7 +377,7 @@ public class IttiaApp extends Application {
             new Separator(), categoryButton,
             new Separator(), 
             new Label("Diagnostics:"), // Group Label
-            dexaButton, ekgButton, ekgQuickButton, cpaButton
+            dexaButton, ekgButton, ekgQuickButton, cpaButton, goutButton
         );
         return topBar;
     }
