@@ -36,3 +36,4 @@ graph TD;
 - Spring Boot web skeleton lives in `server/` with health and template endpoints to extend.# EKG_API-ver_1.1
 # EKG_API-ver_1.1
 # EKG_API-ver_1.1
+# EKG_API-ver_1.2
