@@ -34,3 +34,4 @@ graph TD;
 - JavaFX version is configurable via `gradle.properties` (`javafxVersion`).
 - Kotlin DSL templates for Gradle 9.2 live in `templates/` (`build.gradle.kts.template`, `app.build.gradle.kts.template`, `build-logic.build.gradle.kts.template`) to help migrate without version drift between app and build-logic.
 - Spring Boot web skeleton lives in `server/` with health and template endpoints to extend.# EKG_API-ver_1.1
+# EKG_API-ver_1.1
