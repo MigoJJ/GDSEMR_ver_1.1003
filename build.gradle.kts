@@ -1,4 +1,4 @@
-// GDSEMR_ver_1.1001 - Gradle multi-module build
+// GDSEMR_ver_1.1003 - Gradle multi-module build
 //
 // Centralizes the Java toolchain setup and keeps module build files lean.
 
