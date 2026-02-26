@@ -15,6 +15,7 @@ wrapper/dists/
 # Build outputs
 **/build/
 **/bin/
+native/
 
 # Local logs and helpers
 *.log
